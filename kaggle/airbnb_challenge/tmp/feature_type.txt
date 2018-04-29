@@ -1,0 +1,6 @@
+########## object ##########
+['ds_night', 'ds', 'id_listing_anon', 'id_user_anon', 'dim_market', 'dim_room_type']
+########## int ##########
+['dim_person_capacity', 'cancel_policy', 'dim_has_wireless_internet', 'ds_night_day_of_week', 'ds_night_day_of_year', 'm_available_listings_ds_night']
+########## float ##########
+['m_effective_daily_price', 'm_pricing_cleaning_fee', 'dim_lat', 'dim_lng', 'm_checkouts', 'm_reviews', 'days_since_last_booking', 'image_quality_score', 'm_total_overall_rating', 'm_professional_pictures', 'ds_checkin_gap', 'ds_checkout_gap', 'occ_occupancy_plus_minus_7_ds_night', 'occ_occupancy_plus_minus_14_ds_night', 'occ_occupancy_trailing_90_ds', 'm_minimum_nights', 'm_maximum_nights', 'price_booked_most_recent', 'p2_p3_click_through_score', 'p3_inquiry_score', 'listing_m_listing_views_2_6_ds_night_decay', 'general_market_m_unique_searchers_0_6_ds_night', 'general_market_m_contacts_0_6_ds_night', 'general_market_m_reservation_requests_0_6_ds_night', 'general_market_m_is_booked_0_6_ds_night', 'kdt_score', 'r_kdt_listing_views_0_6_avg_n100', 'r_kdt_n_active_n100', 'r_kdt_n_available_n100', 'r_kdt_m_effective_daily_price_n100_p50', 'r_kdt_m_effective_daily_price_available_n100_p50', 'r_kdt_m_effective_daily_price_booked_n100_p50']

@@ -1,0 +1,9 @@
+select
+*
+from
+user_cf_action_score
+where dt=20170703
+and from_id=66122798695194624
+order by score desc
+limit 100
+;

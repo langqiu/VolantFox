@@ -1,0 +1,25 @@
+select
+	a.from_id
+	, a.follow_list
+from
+(
+select
+	from_id
+	, follow_list
+from
+user_cf_i2i_action_score
+where dt=20171121
+and follow_list like '%147393646235959296,%'
+) a
+join
+(
+select
+        from_id
+	, follow_list
+from
+user_cf_i2i_action_score
+where dt=20171121
+and follow_list like '%175102384854106112,%'
+) b
+on (a.from_id = b.from_id)
+;

@@ -1,0 +1,106 @@
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+create temporary function gen_features as 'net.vickymedia.recommend.udf.ranking.similar.SimilarFeatureEncodingExp';
+
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapred.reduce.tasks=500;
+
+create external table if not exists similar_click_model_offline_hash_feature_label_daily
+(
+        s_mus_id        bigint
+        , r_mus_id      bigint
+        , label         double
+        , features      string
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+Location 's3://musically-bigdata/recommend_script/data/similar_click_model_offline/similar_click_model_offline_hash_feature_label_daily/'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+);
+
+insert overwrite table similar_click_model_offline_hash_feature_label_daily partition(dt=${hiveconf:day})
+select
+        s_mus_id
+        , r_mus_id
+        , label
+        , gen_features(s_mus_id, r_mus_id, 0, scm, s_mus_hashtags, s_mus_labels, s_user_id, s_user_country, s_user_state, s_user_city, s_user_age, s_user_gender, s_user_race, s_user_c_labels, r_mus_hashtags, r_mus_labels, r_user_id, r_user_country, r_user_state, r_user_city, r_user_age, r_user_gender, r_user_race, r_user_c_labels) as feature
+from
+(
+select
+        a.s_mus_id as s_mus_id
+        , a.r_mus_id as r_mus_id
+        , a.scm as scm
+        , a.label as label
+        --
+        , if(b.hashtags is null, '', b.hashtags) as s_mus_hashtags
+        , if(b.labels is null, '', b.labels) as s_mus_labels
+        , if(b.user_id is null, 0, b.user_id) as s_user_id
+        , if(b.user_country is null, '', b.user_country) as s_user_country
+        , if(b.user_state is null, '', b.user_state) as s_user_state
+        , if(b.user_city is null, '', b.user_city) as s_user_city
+        , if(b.user_grade_level is null, -1, b.user_grade_level) as s_user_age
+        , if(b.user_gender is null, '', b.user_gender) as s_user_gender
+        , if(b.user_race is null, '', b.user_race) as s_user_race
+        , if(b.user_c_labels is null, '', b.user_c_labels) as s_user_c_labels
+        --
+        , if(c.hashtags is null, '', c.hashtags) as r_mus_hashtags
+        , if(c.labels is null, '', c.labels) as r_mus_labels
+        , if(c.user_id is null, 0, c.user_id) as r_user_id
+        , if(c.user_country is null, '', c.user_country) as r_user_country
+        , if(c.user_state is null, '', c.user_state) as r_user_state
+        , if(c.user_city is null, '', c.user_city) as r_user_city
+        , if(c.user_grade_level is null, -1, c.user_grade_level) as r_user_age
+        , if(c.user_gender is null, '', c.user_gender) as r_user_gender
+        , if(c.user_race is null, '', c.user_race) as r_user_race
+        , if(c.user_c_labels is null, '', c.user_c_labels) as r_user_c_labels
+        ----
+        --, if(c.views is null, 0.0, c.views) as r_mus_view_cnt
+        --, if(c.loops is null, 0.0, c.loops) as r_mus_loop_cnt
+        --, if(c.likes is null, 0.0, c.likes) as r_mus_like_cnt
+        --, if(c.lews is null, 0.0, c.lews) as r_mus_lews_cnt
+        --, if(c.dur is null, 0.0, c.dur) as r_mus_duration
+        --, if(c.loop_ratio is null, 0.0, c.loop_ratio) as r_mus_loop_ratio
+        --, if(c.like_ratio is null, 0.0, c.like_ratio) as r_mus_like_ratio
+        --, if(c.lews_ratio is null, 0.0, c.lews_ratio) as r_mus_lews_ratio
+        --, if(c.q2 is null, 0.0, c.q2) as r_mus_q2
+        --, if(c.q2_local is null, 0.0, c.q2_local) as r_mus_q2_local
+        --, if(c.musical_type is null, -1, c.musical_type) as r_mus_type
+        --, if(c.mean_bright is null, 0.0, c.mean_bright) as r_mus_bright
+        --, if(c.user_fans_cnt is null, 0, c.user_fans_cnt) as r_user_fans_cnt
+        --, if(c.user_heart_cnt is null, 0, c.user_heart_cnt) as r_user_heart_cnt
+        --, if(c.user_post_cnt is null, 0, c.user_post_cnt) as r_user_post_cnt
+from
+(
+select
+  s_mus_id
+  , r_mus_id
+  , scm
+  , label
+from
+similar_click_model_offline_extract_label_daily
+where dt=${hiveconf:day}
+) a
+left join
+(
+select * from
+musical_features_for_similar
+where dt=${hiveconf:day}
+) b
+on (a.s_mus_id=b.musical_id)
+left join
+(
+select * from
+musical_features_for_similar
+where dt=${hiveconf:day}
+) c
+on (a.r_mus_id=c.musical_id)
+) K
+;

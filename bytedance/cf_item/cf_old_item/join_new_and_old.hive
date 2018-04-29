@@ -1,0 +1,62 @@
+create EXTERNAL table if not exists join_new_old_i2i_test
+(
+	musical_id bigint
+	, rec_list_new string
+	, rec_list_old string
+	, cf_len bigint
+	, cf_norm bigint
+	, user_fans bigint
+	, user_id bigint
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/i2i_old_test/join_new_old_i2i_test/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table join_new_old_i2i_test partition (dt=20171115)
+select
+	a.item_id
+	, b.item_list
+	, a.item_list
+	, c.item_len
+	, c.item_norm
+	, e.item_len
+	, d.user_id
+from
+(
+select * from
+musical_cf_i2i_rawx
+where dt=20171115
+) a
+join
+(
+select * from
+musical_cf_i2i_rawx_upgrade
+where dt=20171115
+) b
+on (a.item_id=b.item_id)
+join
+(
+select * from
+musical_i2u_with_norm_upgrade
+where dt=20171115
+) c
+on (a.item_id=c.item_id)
+join
+(
+select * from
+musical
+where dt=20171115
+) d
+on (a.item_id=d.musical_id)
+join
+(
+select * from
+uid_to_norm
+) e
+on (d.user_id=e.item_id)
+;

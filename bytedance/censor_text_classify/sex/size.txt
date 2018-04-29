@@ -1,0 +1,1 @@
+{"vocab_size": 550148, "location_vec": "w2v/en_comments.w2v", "dropout": 0.5, "batch_size": 128, "num_filter": 60, "sentence_size": 25, "vec_size": 100, "filter_list": [1, 2, 3, 4], "epoch_num": 50, "num_label": 2}

@@ -1,0 +1,143 @@
+create EXTERNAL table if not exists handle_name_fake_account
+(
+    user_id		bigint
+    , user_handle	string
+    , user_nick		string
+    , user_fans		bigint
+    , star_user_id	bigint
+    , star_handle	string
+    , match_result	string
+    , handle_like	string
+    , nick_like		string
+    , star_handle_len	bigint
+    , handle_rate	float
+    , nick_rate		float
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/fake_account/handle_name_fake_account/'
+TBLPROPERTIES (
+        'auto.purge' = 'false'
+);
+
+create EXTERNAL table if not exists bigstar_user_for_fake_account
+(
+	u_id		bigint
+	, u_handle	string
+	, u_nick_name	string
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/fake_account/bigstar_user_for_fake_account/'
+TBLPROPERTIES (
+        'auto.purge' = 'false'
+);
+
+insert overwrite table bigstar_user_for_fake_account
+select
+    u_id
+    , u_handle
+    , u_nick_name
+from
+(
+select
+    u_id
+    , u_handle
+    , u_nick_name
+from
+`user`
+) a
+join
+(
+select
+    item_id
+    , item_len
+from
+uid_to_norm
+where item_len>200000
+) b
+on (a.u_id = b.item_id)
+;
+
+set mapred.reduce.tasks=2000;
+set hive.auto.convert.join = true;
+set hive.mapjoin.smalltable.filesize = 25000000;
+add jar s3n://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function handle_match as 'net.vickymedia.recommend.udf.censor.HandleNameMatchProcess';
+
+insert overwrite table handle_name_fake_account
+select /*+ mapjoin(A)*/
+    user_id
+    , user_handle
+    , user_nick
+    , user_fans
+    , star_user_id
+    , star_handle
+    , match_result
+    , handle_like
+    , nick_like
+    , star_handle_len
+    , handle_rate
+    , nick_rate
+from
+(
+select
+    B.u_id as user_id
+    , B.u_handle as user_handle
+    , B.u_nick_name as user_nick
+    , B.fans_cnt as user_fans
+    , A.u_id as star_user_id
+    , A.u_handle as star_handle
+    , handle_match(A.u_handle,B.u_handle,B.u_nick_name) as match_result
+    , if(B.u_handle like concat('%',A.u_handle,'%') and length(A.u_handle)>=9,'1','0') as handle_like
+    , if(B.u_nick_name like concat('%',A.u_handle,'%') and length(A.u_handle)>=9,'1','0') as nick_like
+    , length(A.u_handle) as star_handle_len
+    , length(A.u_handle)*1.0/length(B.u_handle) as handle_rate
+    , length(A.u_handle)*1.0/length(B.u_nick_name) as nick_rate
+from
+(
+select
+    u_id
+    , u_handle
+    , u_nick_name
+    , '1' as type
+from
+bigstar_user_for_fake_account
+) A
+join
+(
+select
+    u_id
+    , u_handle
+    , u_nick_name
+    , fans_cnt
+    , '1' as type
+from
+(
+select
+    u_id
+    , u_handle
+    , u_nick_name
+from
+`user`
+) a
+join
+(
+select
+    item_id
+    , item_len as fans_cnt
+from
+uid_to_norm
+--where item_len>100
+) b
+on (a.u_id = b.item_id)
+) B
+on (A.type = B.type)
+where A.u_id < B.u_id
+and A.u_id != 107955
+) C
+where (match_result!='0' or handle_like!='0' or nick_like!='0')
+and user_id is not null
+;

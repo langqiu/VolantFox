@@ -1,0 +1,70 @@
+set mapreduce.map.memory.mb=4086;
+set mapreduce.reduce.memory.mb=4086;
+set mapreduce.map.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function make_item_list_exp as 'net.vickymedia.recommend.udf.primary.MakeItemListExp';
+create temporary function merge_action_list_cumulative_exp as 'net.vickymedia.recommend.udf.primary.MergeActionListCumulativeExp';
+create temporary function format_like_list as 'net.vickymedia.recommend.udf.log.FormatLikeList';
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+create EXTERNAL table if not exists musical_cf_i2i_recx_upgrade
+(
+item_id bigint comment 'musical id',
+item_list string comment "format: item_id, score, rec_type,author_id\\;item_id2..."
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/musical/musical_cf_i2i_recx_upgrade/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table musical_cf_i2i_recx_upgrade partition(dt=20171124)
+select
+   item_id
+   , concat_ws('\\;', collect_set(rec_info)) as item_list
+from
+(
+select
+   item_id
+   , score
+   , rec_info
+from
+(
+select
+   item_id
+   , split_part(rec_info, ',', 1) as rec_id
+   , cast(split_part(rec_info, ',', 2) as double) as score
+   , rec_info
+from
+(
+select
+   trans_array(1, '\\;', item_id, item_list) as (item_id, rec_info)
+from
+   musical_cf_i2i_usualx_upgrade
+where dt = 20171124
+and regexp_count(item_list,"\\;")>=5
+) a
+) A
+join
+(
+select
+	musical_id
+from
+	musical
+where dt = 20171124
+and source != 5
+) B
+on (A.rec_id = B.musical_id)
+distribute by item_id
+sort by score desc 
+) C
+group by item_id
+;

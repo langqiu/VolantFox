@@ -1,0 +1,69 @@
+create EXTERNAL table if not exists duplicate_bigstar_fake_prepare
+(
+    musical_id            bigint
+    , like_cnt             bigint
+    , user_id             bigint
+    , fan_cnt            bigint
+    , create_time         string
+    , phash_id             string
+    , dhash_id             string
+    , phash_split        bigint
+    , dhash_split        bigint
+    , hash_index        bigint
+    , phash_hamming_0   bigint
+    , dhash_hamming_0   bigint
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/duplicate_video/duplicate_bigstar_fake_prepare/'
+TBLPROPERTIES (
+      'auto.purge' = 'false'
+);
+
+set mapred.reduce.tasks=200;
+add archive s3n://musically-bigdata/recommend_script/udf/log/hash_split.py;
+add file s3n://musically-bigdata/recommend_script/udf/log/hamming.py;
+
+insert overwrite table duplicate_bigstar_fake_prepare
+select
+    A.musical_id
+    , A.like_cnt
+    , A.user_id
+    , A.fan_cnt
+    , A.create_time
+    , A.phash_id
+    , A.dhash_id
+    , A.phash_split
+    , A.dhash_split
+    , A.hash_index
+    , B.phash_hamming
+    , B.dhash_hamming
+from
+(
+select
+      transform(musical_id, like_cnt, user_id, fan_cnt, create_time, phash_id, dhash_id)
+      using 'python hash_split.py 8'
+      as (musical_id, like_cnt, user_id, fan_cnt, create_time, phash_id, dhash_id, phash_split, dhash_split, hash_index)
+from
+(
+select * from
+duplicate_candidate_videos_hash
+distribute by rand()
+) a
+) A
+join
+(
+select
+    transform(musical_id, '0', user_id, '0', phash_id, '0', dhash_id, '0')
+    using 'python hamming.py'
+    as (musical_id, musical_id_sim, user_id, user_id_sim, phash_hamming, dhash_hamming)
+from
+(
+select * from
+duplicate_candidate_videos_hash
+distribute by rand()
+) b
+) B
+on (A.musical_id = B.musical_id)
+;

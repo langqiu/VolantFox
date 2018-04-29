@@ -1,0 +1,126 @@
+" General {
+
+  " 让配置变更立即生效
+  autocmd BufWritePost $MYVIMRC source $MYVIMRC
+  " 开启文件类型侦测
+  filetype on
+  " 针对不同文件类型加载不同的插件
+  filetype plugin on
+
+" }
+
+
+" Vim UI {
+
+  " 开启语法高亮功能
+  syntax enable
+  " 设置相对行号
+  set relativenumber
+
+" }
+
+" Formatting {
+
+  " google代码风格建议tab设置成两个空格
+  set tabstop=2 softtabstop=2 shiftwidth=2 expandtab
+
+" }
+
+" KeyMappings {
+
+  " 快速定位行首
+  nmap LB 0
+  " 快速定位行尾
+  nmap LE $
+  " 依次遍历子窗口
+  nnoremap nw <C-W><C-W>
+  " 跳转至右方的窗口
+  nnoremap <leader>lw <C-W>l
+  " 跳转至左方的窗口
+  nnoremap <Leader>hw <C-W>h
+  " 跳转至上方的子窗口
+  nnoremap <Leader>kw <C-W>k
+  " 跳转至下方的子窗口
+  nnoremap <Leader>jw <C-W>j
+  " 定义快捷键在结对符之间跳转
+  nmap <Leader>M %
+" }
+
+" Plugins {
+
+  " NerdTree {
+    if isdirectory(expand("~/.vim/bundle/nerdtree"))
+      map <leader>f :NERDTreeToggle%:p:h<CR>
+    endif
+  " }
+
+  " TagBar {
+    if isdirectory(expand("~/.vim/bundle/tagbar/"))
+      nnoremap <silent> <leader>tb :TagbarToggle<CR>
+    endif
+  "}
+
+  " YouCompleteMe {
+    if count(g:spf13_bundle_groups, 'youcompleteme')
+      let g:acp_enableAtStartup = 0
+      " global conf which is needed to resolve name in system include
+      " file or other  third-part include file
+      let g:ycm_global_ycm_extra_conf = '~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp/ycm/.ycm_extra_conf.py'
+      " enable completion from tags
+      let g:ycm_key_invoke_completion = '<C-;>'
+      nnoremap <F5> :YcmForceCompileAndDiagnostics<CR>
+      nnoremap <leader>jd :YcmCompleter GoToDefinitionElseDeclaration<CR>
+      " YCM 补全菜单配色
+      " 菜单
+      highlight Pmenu ctermfg=24 ctermbg=252 guifg=#005f87 guibg=#EEE8D5
+      " 选中项
+      highlight PmenuSel ctermfg=179 ctermbg=0 guifg=#AFD700 guibg=#106900
+      " 补全功能在注释中同样有效
+      let g:ycm_complete_in_comments=1
+      " 允许 vim 加载 .ycm_extra_conf.py 文件，不再提示
+      let g:ycm_confirm_extra_conf=0
+      " 开启 YCM 标签补全引擎
+      let g:ycm_collect_identifiers_from_tags_files=1
+      " 引入 C++ 标准库tags
+      set tags+=/data/misc/software/misc./vim/stdcpp.tags
+      " YCM 集成 OmniCppComplete 补全引擎，设置其快捷键
+      inoremap <leader>; <C-x><C-o>
+      " 补全内容不以分割子窗口形式出现，只显示补全列表
+      set completeopt-=preview
+      " 从第一个键入字符就开始罗列匹配项
+      let g:ycm_min_num_of_chars_for_completion=1
+      " 禁止缓存匹配项，每次都重新生成匹配项
+      let g:ycm_cache_omnifunc=0
+      " 语法关键字补全
+      let g:ycm_seed_identifiers_with_syntax=1
+    endif
+  " }
+
+  " Syntastic {
+    if count(g:spf13_bundle_groups, 'programming')
+      set statusline+=%#warningmsg#
+      set statusline+=%{SyntasticStatuslineFlag()}
+      set statusline+=%*
+      let g:syntastic_aggregate_errors = 1
+      let g:syntastic_always_populate_loc_list = 1
+      let g:syntastic_auto_loc_list = 1
+      let g:syntastic_check_on_open = 1
+      let g:syntastic_check_on_wq = 0
+      let g:syntastic_error_symbol='✗'
+      let g:syntastic_warning_symbol='⚠'
+      map <leader>sy :lopen<CR>
+    endif
+  " }
+
+  " VimIndentGuides {
+      let g:indent_guides_auto_colors = 0
+      let g:indent_guides_guide_size = 1
+      autocmd VimEnter,Colorscheme * :hi IndentGuidesOdd  guibg=red   ctermbg=239
+      autocmd VimEnter,Colorscheme * :hi IndentGuidesEven guibg=green ctermbg=239
+  " }
+
+  " Gundo {
+      nnoremap <leader>gu :GundoToggle<CR>
+  " }
+
+" }

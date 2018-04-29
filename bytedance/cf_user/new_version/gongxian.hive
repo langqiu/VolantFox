@@ -1,0 +1,107 @@
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+
+select
+	A.from_id
+	, A.like_cnt
+	, A.view_profile_cnt
+	, A.loop_cnt
+	, B.like_cnt
+	, B.view_profile_cnt
+	, B.loop_cnt
+from
+(
+select
+	from_id
+	, to_id
+	, max(like_cnt) as like_cnt
+	, max(view_profile_cnt) as view_profile_cnt
+	, max(loop_cnt) as loop_cnt
+from
+(
+select
+        from_id
+	, to_id
+	, like_cnt
+	, 0 as view_profile_cnt
+	, 0 as loop_cnt
+from
+user_like_rel_counter
+where dt=20171121
+and to_id=${hiveconf:user1}
+union all
+select
+	from_id
+	, to_id
+	, 0 as like_cnt
+	, view_profile_cnt
+	, 0 as loop_cnt
+from
+view_profile_rel_counter
+where dt=20171121
+and to_id=${hiveconf:user1}
+union all
+select
+	from_id
+	, to_id
+	, 0 as like_cnt
+	, 0 as view_profile_cnt
+	, loop_cnt
+from
+user_loop_rel_counter
+where dt=20171121
+and to_id=${hiveconf:user1}
+) a
+group by from_id, to_id
+) A
+join
+(
+select
+	from_id
+	, to_id
+	, max(like_cnt) as like_cnt
+	, max(view_profile_cnt) as view_profile_cnt
+	, max(loop_cnt) as loop_cnt
+from
+(
+select
+        from_id
+	, to_id
+	, like_cnt
+	, 0 as view_profile_cnt
+	, 0 as loop_cnt
+from
+user_like_rel_counter
+where dt=20171121
+and to_id=${hiveconf:user2}
+union all
+select
+	from_id
+	, to_id
+	, 0 as like_cnt
+	, view_profile_cnt
+	, 0 as loop_cnt
+from
+view_profile_rel_counter
+where dt=20171121
+and to_id=${hiveconf:user2}
+union all
+select
+	from_id
+	, to_id
+	, 0 as like_cnt
+	, 0 as view_profile_cnt
+	, loop_cnt
+from
+user_loop_rel_counter
+where dt=20171121
+and to_id=${hiveconf:user2}
+) a
+group by from_id, to_id
+) B
+on (A.from_id = B.from_id)
+where A.like_cnt+A.view_profile_cnt+A.loop_cnt>0
+and B.like_cnt+B.view_profile_cnt+B.loop_cnt>0
+;

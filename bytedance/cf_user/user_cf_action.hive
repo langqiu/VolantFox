@@ -1,0 +1,305 @@
+--SET hive.execution.engine=mr;
+set mapreduce.map.memory.mb=3072;
+set mapreduce.reduce.memory.mb=3072;
+set mapreduce.map.java.opts=-Xmx3072m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx3072m -XX:-UseGCOverheadLimit;
+
+create EXTERNAL table if not exists user_cf_action
+(
+    from_id                   bigint,
+    to_id                     bigint,
+    follow_rel              bigint  comment "-1 as not follow,0 as single follow ,1 as double focus,2 as fb friends ,3 as contact friends",
+    like_cnt                bigint,
+    like_cnt_7_days         bigint,
+    comment_cnt             bigint,
+    comment_cnt_7_days         bigint,
+    create_time             bigint,
+    update_time             bigint,
+    search_cnt              bigint,
+    search_cnt_7_days       bigint,
+    view_profile_cnt        bigint,
+    view_profile_cnt_7_days    bigint,
+    loop_cnt                bigint,
+    loop_cnt_7_days            bigint
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/user_cf_action/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+--insert overwrite table user_cf_action partition(dt=${yesterday})
+insert overwrite table user_cf_action partition(dt=20170630)
+select
+    from_id,
+    to_id,
+    follow_rel,
+    like_cnt,
+    like_cnt_7_days,
+    comment_cnt,
+    comment_cnt_7_days,
+    create_time,
+    update_time,
+    search_cnt,
+    search_cnt_7_days,
+    view_profile_cnt,
+    view_profile_cnt_7_days,
+    loop_cnt,
+    loop_cnt_7_days
+from
+(
+select /*+ mapjoin(C) */
+   from_id,
+   to_id,
+   follow_rel,
+   like_cnt,
+   like_cnt_7_days,
+   comment_cnt,
+   comment_cnt_7_days,
+   create_time,
+   update_time,
+   C.user_id as spam_to_id,
+   D.user_id as spam_from_id,
+   if(E.follows is null, 0, E.follows) as follows,
+   if(F.fans is null, 0, F.fans) as fans,
+   search_cnt,
+   search_cnt_7_days,
+   view_profile_cnt,
+   view_profile_cnt_7_days,
+   loop_cnt,
+   loop_cnt_7_days
+from
+(
+select
+   from_id,
+   to_id,
+   max(follow_rel) as follow_rel,
+   sum(like_cnt) as like_cnt,
+   sum(like_cnt_7_days) as like_cnt_7_days,
+   sum(comment_cnt) as comment_cnt,
+   sum(comment_cnt_7_days) as comment_cnt_7_days,
+   max(create_time) as create_time,
+   max(update_time) as update_time,
+   sum(search_cnt) as search_cnt,
+   sum(search_cnt_7_days) as search_cnt_7_days,
+   sum(view_profile_cnt) as view_profile_cnt,
+   sum(view_profile_cnt_7_days) as view_profile_cnt_7_days,
+   sum(loop_cnt) as loop_cnt,
+   sum(loop_cnt_7_days) as loop_cnt_7_days
+from
+(
+   select
+      from_id,
+      to_id,
+      mutual as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      create_time,
+      update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      --user_follow
+      user_follow_dev
+   union all
+   select
+      from_id,
+      to_id,
+      -1 as follow_rel,
+      like_cnt,
+      like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      user_like_rel_counter
+   --where dt = ${yesterday}
+   where dt=20170630
+   union all
+   select
+      from_id,
+      to_id,
+      -1 as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      comment_cnt,
+      comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      user_comment_rel
+   --where dt = ${yesterday}
+   where dt=20170630
+   union all
+   select
+      from_id,
+      to_id,
+      -1 as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      search_cnt as search_cnt,
+      search_cnt_7_days as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      user_search_rel_counter
+   --where dt = ${yesterday}
+   where dt=20170630
+   union all
+   select
+      from_id,
+      to_id,
+      -1 as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      view_profile_cnt as view_profile_cnt,
+      view_profile_cnt_7_days as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      view_profile_rel_counter
+   --where dt = ${yesterday}
+   where dt=20170630
+   union all
+   select
+      from_id,
+      to_id,
+      -1 as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      loop_cnt as loop_cnt,
+      loop_cnt_7_days as loop_cnt_7_days
+   from
+      user_loop_rel_counter
+   --where dt = ${yesterday}
+   where dt=20170701
+   and from_id is not null
+   and to_id is not null
+   and loop_cnt is not null
+   and loop_cnt_7_days is not null
+   union all
+   select
+      from_mus_id as from_id,
+      to_mus_id as to_id,
+      2 as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      fb_musically_rel
+   --where dt=${zdt.addDay(-2).format('yyyyMMdd')}
+   where dt=20170629
+   union all
+   select
+      fid as from_id,
+      tid as to_id,
+      3 as follow_rel,
+      0 as like_cnt,
+      0 as like_cnt_7_days,
+      0 as comment_cnt,
+      0 as comment_cnt_7_days,
+      0 as create_time,
+      0 as update_time,
+      0 as search_cnt,
+      0 as search_cnt_7_days,
+      0 as view_profile_cnt,
+      0 as view_profile_cnt_7_days,
+      0 as loop_cnt,
+      0 as loop_cnt_7_days
+   from
+      contact_direct_rel
+   --where dt = ${zdt.addDay(-2).format('yyyyMMdd')}
+   where dt=20170629
+)A group by from_id,to_id
+)B
+left outer join
+(
+select
+   user_id
+from
+   disabled_users
+where dt=20170729
+)C
+on (B.to_id=C.user_id)
+left outer join
+(
+select
+   user_id
+from
+   disabled_users
+where dt=20170729
+)D
+on (B.from_id=D.user_id)
+left outer join
+(
+select
+   item_id,
+   item_len as follows
+from
+   uid_follow_norm
+)E
+on (B.from_id = E.item_id)
+left outer join
+(
+select
+   item_id,
+   item_len as fans
+from
+   uid_to_norm
+)F
+on (B.from_id = F.item_id)
+)G
+where spam_to_id is null and spam_from_id is null
+and follows<1000
+;

@@ -1,0 +1,72 @@
+--SET hive.execution.engine=mr;
+set mapred.max.split.size=32000000;
+set mapred.reduce.tasks=1009;
+set mapreduce.map.memory.mb=4086;
+set mapreduce.reduce.memory.mb=4086;
+set mapreduce.map.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function divide_into_pair as 'net.vickymedia.recommend.udf.i2i.DivideIntoPair';
+create temporary function aggregate_rec_items as 'net.vickymedia.recommend.udf.i2i.AggregateRecItems';
+
+--set mapred.max.split.size=128000000;
+
+create EXTERNAL table if not exists musical_cf_i2i_mediumx_upgrade
+(
+item_id bigint,
+item_list string comment "format: musical_id,score,author_id..."
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/i2i_mediumx_upgrade/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+
+insert overwrite table musical_cf_i2i_mediumx_upgrade partition(dt=${hiveconf:day})
+select/*+ mapjoin(C) */
+  B.item_id,
+  aggregate_rec_items(rec_item, score, rec_type,author_id,track_id) as item_list
+from
+(
+select
+  cast(item_id as bigint) item_id,
+  cast(rec_item as bigint) rec_item,
+  cast(score as double) score,
+  cast(rec_type as bigint) rec_type
+from
+(
+select
+  divide_into_pair(cast(item_id as bigint), item_list) as (item_id, rec_item, score, rec_type)
+from
+  musical_cf_i2i_rawx_upgrade
+where
+  dt=${hiveconf:day}
+)A
+)B
+join
+(
+select
+   musical_id,
+   user_id as author_id,
+   case
+   when track_id is null then 0
+   else track_id
+   end as track_id
+from
+   musical_for_recommend
+where dt = ${hiveconf:day}
+and index_time >= 20171028
+)C
+on
+B.rec_item = C.musical_id
+group by
+   B.item_id
+having
+   length(item_list) > 0
+;

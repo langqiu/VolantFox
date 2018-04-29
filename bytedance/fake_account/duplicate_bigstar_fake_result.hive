@@ -1,0 +1,93 @@
+create EXTERNAL table if not exists duplicate_bigstar_fake_result
+(
+    user_id                bigint
+    , mus_cnt            bigint
+    , copy_mus_cnt        bigint
+    , copy_rate            float
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/duplicate_video/duplicate_bigstar_fake_result/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table duplicate_bigstar_fake_result partition(dt=20170727)
+select
+    user_id
+    , mus_cnt
+    , copy_mus_cnt
+    , copy_rate
+from
+(
+select
+    A.user_id
+    , B.mus_cnt
+    , A.copy_mus_cnt
+    , round(A.copy_mus_cnt*1.0/B.mus_cnt, 4) as copy_rate
+from
+(
+select
+    user_id_sim as user_id
+    , count(distinct musical_id_sim) as copy_mus_cnt
+from
+(
+select
+    a.user_id_sim
+    , a.musical_id_sim
+from
+(
+select
+    *
+from
+duplicate_bigstar_fake
+where dt=20170727
+) a
+join
+(
+select
+    musical_id_sim
+    , count(*)
+from
+duplicate_bigstar_fake
+where dt=20170727
+group by musical_id_sim
+having count(*)=1
+) b
+on (a.musical_id_sim = b.musical_id_sim)
+join
+(
+select
+    musical_id
+    , count(*)
+from
+duplicate_bigstar_fake
+where dt=20170727
+group by musical_id
+having count(*)<=30
+) d
+on (a.musical_id = d.musical_id)
+) c
+group by user_id_sim
+) A
+join
+(
+select
+    user_id
+    , count(distinct musical_id) as mus_cnt
+from
+musical
+where dt=20170726
+and musical_id>0
+and user_id>0
+and client_create_time is not null
+group by user_id
+) B
+on (A.user_id = B.user_id)
+)C
+--where copy_mus_cnt>=20
+--or (copy_mus_cnt>=5 and copy_rate>0.1)
+--or copy_rate>0.3
+;

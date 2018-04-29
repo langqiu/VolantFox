@@ -1,0 +1,320 @@
+########## m_effective_daily_price ##########
+count    184148.000000
+mean        149.446308
+std         272.313830
+min         -55.000000
+25%          71.338028
+50%         100.000000
+75%         152.442697
+max       12995.000000
+Name: m_effective_daily_price, dtype: float64
+########## m_pricing_cleaning_fee ##########
+count    184148.000000
+mean         38.030245
+std          50.003528
+min           0.000000
+25%           0.000000
+50%          25.000000
+75%          53.947735
+max         800.000000
+Name: m_pricing_cleaning_fee, dtype: float64
+########## dim_lat ##########
+count    184148.000000
+mean         43.551109
+std           6.817312
+min          33.708763
+25%          34.129856
+50%          48.844982
+75%          48.871025
+max          49.187890
+Name: dim_lat, dtype: float64
+########## dim_lng ##########
+count    184148.000000
+mean        -44.286041
+std          59.189787
+min        -122.510925
+25%        -118.357060
+50%           2.303334
+75%           2.355691
+max           2.887966
+Name: dim_lng, dtype: float64
+########## m_checkouts ##########
+count    183961.000000
+mean         18.469909
+std          32.314269
+min           0.000000
+25%           1.000000
+50%           6.000000
+75%          22.000000
+max         432.000000
+Name: m_checkouts, dtype: float64
+########## m_reviews ##########
+count    183961.000000
+mean         10.976354
+std          20.024307
+min           0.000000
+25%           0.000000
+50%           3.000000
+75%          12.000000
+max         280.000000
+Name: m_reviews, dtype: float64
+########## days_since_last_booking ##########
+count    146388.000000
+mean         69.185391
+std         123.544314
+min           0.000000
+25%           5.000000
+50%          20.000000
+75%          72.000000
+max        1041.000000
+Name: days_since_last_booking, dtype: float64
+########## image_quality_score ##########
+count    170228.000000
+mean          0.562073
+std           0.306837
+min           0.000000
+25%           0.300549
+50%           0.577979
+75%           0.853521
+max           0.999996
+Name: image_quality_score, dtype: float64
+########## m_total_overall_rating ##########
+count    183961.000000
+mean         47.904148
+std          86.925872
+min           0.000000
+25%           0.000000
+50%          14.000000
+75%          54.000000
+max        1313.000000
+Name: m_total_overall_rating, dtype: float64
+########## m_professional_pictures ##########
+count    183961.000000
+mean          4.798224
+std           8.505757
+min           0.000000
+25%           0.000000
+50%           0.000000
+75%          10.000000
+max          80.000000
+Name: m_professional_pictures, dtype: float64
+########## ds_checkin_gap ##########
+count    181927.000000
+mean          5.888521
+std           2.197593
+min           0.000000
+25%           7.000000
+50%           7.000000
+75%           7.000000
+max           7.000000
+Name: ds_checkin_gap, dtype: float64
+########## ds_checkout_gap ##########
+count    181927.000000
+mean          6.123390
+std           2.040944
+min           0.000000
+25%           7.000000
+50%           7.000000
+75%           7.000000
+max           7.000000
+Name: ds_checkout_gap, dtype: float64
+########## occ_occupancy_plus_minus_7_ds_night ##########
+count    163421.000000
+mean          0.061365
+std           0.159802
+min           0.000000
+25%           0.000000
+50%           0.000000
+75%           0.000000
+max           1.000000
+Name: occ_occupancy_plus_minus_7_ds_night, dtype: float64
+########## occ_occupancy_plus_minus_14_ds_night ##########
+count    163496.000000
+mean          0.079743
+std           0.171296
+min           0.000000
+25%           0.000000
+50%           0.000000
+75%           0.068966
+max           1.000000
+Name: occ_occupancy_plus_minus_14_ds_night, dtype: float64
+########## occ_occupancy_trailing_90_ds ##########
+count    173995.000000
+mean          0.280231
+std           0.311942
+min           0.000000
+25%           0.000000
+50%           0.148148
+75%           0.530612
+max           1.000000
+Name: occ_occupancy_trailing_90_ds, dtype: float64
+########## m_minimum_nights ##########
+count    181927.000000
+mean          5.000709
+std          22.396860
+min           1.000000
+25%           1.000000
+50%           2.000000
+75%           3.000000
+max        1000.000000
+Name: m_minimum_nights, dtype: float64
+########## m_maximum_nights ##########
+count    1.819270e+05
+mean     4.785939e+04
+std      1.006949e+07
+min      1.000000e+00
+25%      3.000000e+01
+50%      1.125000e+03
+75%      1.125000e+03
+max      2.147484e+09
+Name: m_maximum_nights, dtype: float64
+########## price_booked_most_recent ##########
+count    146388.000000
+mean        140.267310
+std         159.855669
+min           0.000000
+25%          69.000000
+50%         100.000000
+75%         155.000000
+max        4999.000000
+Name: price_booked_most_recent, dtype: float64
+########## p2_p3_click_through_score ##########
+count    57129.000000
+mean         0.231723
+std          0.073625
+min          0.052968
+25%          0.181564
+50%          0.223077
+75%          0.270523
+max          0.766491
+Name: p2_p3_click_through_score, dtype: float64
+########## p3_inquiry_score ##########
+count    54949.000000
+mean         0.180926
+std          0.073426
+min          0.013492
+25%          0.128333
+50%          0.171852
+75%          0.223182
+max          0.643529
+Name: p3_inquiry_score, dtype: float64
+########## listing_m_listing_views_2_6_ds_night_decay ##########
+count    181821.000000
+mean          0.384615
+std           1.031916
+min           0.000000
+25%           0.000000
+50%           0.000000
+75%           0.333333
+max          36.133333
+Name: listing_m_listing_views_2_6_ds_night_decay, dtype: float64
+########## general_market_m_unique_searchers_0_6_ds_night ##########
+count    184148.000000
+mean       1702.115752
+std         686.334940
+min         316.714286
+25%        1194.285714
+50%        1629.857143
+75%        2175.428571
+max        3696.714286
+Name: general_market_m_unique_searchers_0_6_ds_night, dtype: float64
+########## general_market_m_contacts_0_6_ds_night ##########
+count    184148.000000
+mean        507.287566
+std         255.064271
+min          52.000000
+25%         349.714286
+50%         488.000000
+75%         617.857143
+max        1453.857143
+Name: general_market_m_contacts_0_6_ds_night, dtype: float64
+########## general_market_m_reservation_requests_0_6_ds_night ##########
+count    184148.000000
+mean         91.582478
+std          48.611185
+min          13.142857
+25%          56.000000
+50%          83.142857
+75%         116.714286
+max         271.571429
+Name: general_market_m_reservation_requests_0_6_ds_night, dtype: float64
+########## general_market_m_is_booked_0_6_ds_night ##########
+count    184148.000000
+mean          0.973109
+std           0.071510
+min           0.571429
+25%           1.000000
+50%           1.000000
+75%           1.000000
+max           1.000000
+Name: general_market_m_is_booked_0_6_ds_night, dtype: float64
+########## kdt_score ##########
+count    184148.000000
+mean          1.067755
+std           0.523167
+min          -1.000000
+25%           0.666667
+50%           1.037037
+75%           1.396552
+max           3.000000
+Name: kdt_score, dtype: float64
+########## r_kdt_listing_views_0_6_avg_n100 ##########
+count    184147.000000
+mean          2.098430
+std           2.081575
+min           0.000000
+25%           0.857143
+50%           1.632653
+75%           2.717687
+max          45.081633
+Name: r_kdt_listing_views_0_6_avg_n100, dtype: float64
+########## r_kdt_n_active_n100 ##########
+count    184147.000000
+mean         90.229887
+std          75.803729
+min           1.000000
+25%          48.000000
+50%          86.000000
+75%         113.000000
+max         910.000000
+Name: r_kdt_n_active_n100, dtype: float64
+########## r_kdt_n_available_n100 ##########
+count    184147.000000
+mean         45.649302
+std          37.513859
+min           0.000000
+25%          25.000000
+50%          41.000000
+75%          56.000000
+max         483.000000
+Name: r_kdt_n_available_n100, dtype: float64
+########## r_kdt_m_effective_daily_price_n100_p50 ##########
+count    184147.000000
+mean        109.250291
+std          64.022125
+min           0.000000
+25%          75.000000
+50%          95.294565
+75%         129.000000
+max        1374.500000
+Name: r_kdt_m_effective_daily_price_n100_p50, dtype: float64
+########## r_kdt_m_effective_daily_price_available_n100_p50 ##########
+count    184131.000000
+mean        115.406212
+std          72.735216
+min           0.000000
+25%          77.753155
+50%          98.578821
+75%         135.488869
+max        1500.000000
+Name: r_kdt_m_effective_daily_price_available_n100_p50, dtype: float64
+########## r_kdt_m_effective_daily_price_booked_n100_p50 ##########
+count    171192.000000
+mean         95.609886
+std          48.748495
+min           0.000000
+25%          65.000000
+50%          86.099629
+75%         115.754137
+max        1995.000000
+Name: r_kdt_m_effective_daily_price_booked_n100_p50, dtype: float64

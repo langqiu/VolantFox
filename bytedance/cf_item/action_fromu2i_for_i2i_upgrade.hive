@@ -1,0 +1,115 @@
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapred.max.split.size=64000000;
+set mapred.reduce.tasks=799;
+
+add jar s3n://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function make_item_list_exp as 'net.vickymedia.recommend.udf.primary.MakeItemListExp';
+create temporary function merge_action_list_cumulative_exp as 'net.vickymedia.recommend.udf.primary.MergeActionListCumulativeExp';
+create temporary function format_like_list as 'net.vickymedia.recommend.udf.log.FormatLikeList';
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+create EXTERNAL table if not exists action_fromu2i_for_i2i_upgrade
+(
+   utdid string,
+   item_list string comment "format: musical_id,author_id,action_type,action_cnt,promote_time,time,index_time,qs,duration,durationscore"
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/musical_i2i_upgrade/action_fromu2i_for_i2i_upgrade/';
+;
+
+alter table action_fromu2i_for_i2i_upgrade add if not exists
+partition(dt=${hiveconf:yesterday})
+;
+
+insert overwrite table action_fromu2i_for_i2i_upgrade partition(dt=${hiveconf:today})
+select
+   COALESCE(E.utdid, D.utdid) as utdid,
+   case
+      when E.item_list is NULL then D.item_list
+      when D.item_list is NULL then E.item_list
+   else merge_action_list_cumulative_exp(E.item_list, D.item_list,90)
+   end as item_list
+from
+(
+select
+   utdid,
+   item_list
+from
+   action_fromu2i_for_i2i_upgrade
+where
+   dt=${hiveconf:yesterday} and length(item_list) > 0
+   and REGEXP_COUNT(split_part(item_list,"\\;",1),",")=10
+)E
+full outer join
+(
+select
+   cast(A.user_id as string) utdid,
+   make_item_list_exp(A.musical_id,C.author_id,A.action_type,C.promote_time,A.time,C.index_time,if(X.qs_by_nofans is null,0.0,X.qs_by_nofans),if(Z.duration is null,0.1,Z.duration)) as item_list
+from
+(
+select
+   userid as user_id,
+   musical_id,
+   4 as action_type,
+   time
+from
+   musical_like_action_all
+where
+   dt >= ${hiveconf:startday}
+   and dt <= ${hiveconf:endday}
+   and userid > 0
+   and musical_id > 0
+)A
+join
+(
+select
+   musical_id,
+   user_id as author_id,
+   case promote_type
+      when 0 then 0
+      else promote_time
+   end as promote_time,
+   cast(index_time as bigint) index_time
+from
+musical
+where
+dt=20171120 and musical_id > 0 and user_id>0 and status=2
+)C
+on A.musical_id = C.musical_id
+left join
+(
+select
+    musical_id
+    , max(q0) as qs_by_nofans
+from
+musical_q_score
+where dt=20171120
+group by musical_id
+) X
+on A.musical_id=X.musical_id
+left join
+(
+select
+    user_id
+    , musical_id
+    , max(if(duration/1000>=3,1/(exp((duration/1000-11)*(-0.25))+1),0.1)) as duration
+from
+user_action_on_musical_meta
+where dt >= ${hiveconf:startday}
+and dt <= ${hiveconf:endday}
+group by user_id, musical_id
+) Z
+on A.musical_id=Z.musical_id and A.user_id=Z.user_id
+where A.user_id != C.author_id
+group by A.user_id
+having
+   length(item_list) > 0
+)D
+on D.utdid = E.utdid
+;

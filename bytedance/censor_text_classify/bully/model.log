@@ -1,0 +1,200 @@
+Iter [0] Train: Time: 105.148s, Training Accuracy: 89.486
+--- Dev Accuracy thus far: 91.446
+--- Dev Category 0 P=0.91306790425,R=0.986149949876,F=0.948202825762
+--- Dev Category 1 P=0.922839506173,R=0.638239479569,F=0.754596803269
+Iter [1] Train: Time: 95.838s, Training Accuracy: 91.190
+--- Dev Accuracy thus far: 91.995
+--- Dev Category 0 P=0.91792985038,R=0.987440633245,F=0.951417312826
+--- Dev Category 1 P=0.931746486952,R=0.660097521333,F=0.772743489119
+Iter [2] Train: Time: 100.133s, Training Accuracy: 91.608
+--- Dev Accuracy thus far: 92.127
+--- Dev Category 0 P=0.918239301995,R=0.988835809866,F=0.952230877737
+--- Dev Category 1 P=0.939066551426,R=0.661491628615,F=0.776210037507
+Iter [3] Train: Time: 104.856s, Training Accuracy: 91.864
+--- Dev Accuracy thus far: 92.393
+--- Dev Category 0 P=0.922186083185,R=0.987493403694,F=0.953723051832
+--- Dev Category 1 P=0.933798882682,R=0.679195449004,F=0.786403199247
+Iter [4] Train: Time: 113.254s, Training Accuracy: 91.974
+--- Dev Accuracy thus far: 92.558
+--- Dev Category 0 P=0.92559730346,R=0.985460590548,F=0.95459134769
+--- Dev Category 1 P=0.925500270416,R=0.695135574287,F=0.793945369135
+Iter [5] Train: Time: 110.374s, Training Accuracy: 92.153
+--- Dev Accuracy thus far: 92.715
+--- Dev Category 0 P=0.929228697539,R=0.983114793024,F=0.955412542947
+--- Dev Category 1 P=0.916263247416,R=0.711614673306,F=0.801075268817
+Iter [6] Train: Time: 107.698s, Training Accuracy: 92.249
+--- Dev Accuracy thus far: 92.652
+--- Dev Category 0 P=0.925701270085,R=0.986621632319,F=0.955191089311
+--- Dev Category 1 P=0.931048551612,R=0.695237128059,F=0.796046511628
+Iter [7] Train: Time: 102.567s, Training Accuracy: 92.327
+--- Dev Accuracy thus far: 92.690
+--- Dev Category 0 P=0.925404870812,R=0.987520118203,F=0.955454011692
+--- Dev Category 1 P=0.935196602274,R=0.693487757797,F=0.796406486991
+Iter [8] Train: Time: 114.313s, Training Accuracy: 92.398
+--- Dev Accuracy thus far: 92.705
+--- Dev Category 0 P=0.926591630305,R=0.986225822624,F=0.955479145629
+--- Dev Category 1 P=0.929535637149,R=0.699299278968,F=0.798145465083
+Iter [9] Train: Time: 94.969s, Training Accuracy: 92.467
+--- Dev Accuracy thus far: 92.774
+--- Dev Category 0 P=0.925157977883,R=0.988970394216,F=0.956000510139
+--- Dev Category 1 P=0.942201327434,R=0.692057688401,F=0.797985712613
+Iter [10] Train: Time: 94.972s, Training Accuracy: 92.472
+--- Dev Accuracy thus far: 92.604
+--- Dev Category 0 P=0.921531593407,R=0.991240336667,F=0.955115738093
+--- Dev Category 1 P=0.952408256881,R=0.674997460124,F=0.790058862001
+Iter [11] Train: Time: 94.939s, Training Accuracy: 92.590
+--- Dev Accuracy thus far: 92.854
+--- Dev Category 0 P=0.927235339296,R=0.987467349146,F=0.956403966064
+--- Dev Category 1 P=0.93564557648,R=0.70161536117,F=0.801904319554
+Iter [12] Train: Time: 98.626s, Training Accuracy: 92.651
+--- Dev Accuracy thus far: 92.835
+--- Dev Category 0 P=0.926952515419,R=0.987544202248,F=0.956289529164
+--- Dev Category 1 P=0.93598263936,R=0.700609137056,F=0.801370260698
+Iter [13] Train: Time: 95.510s, Training Accuracy: 92.651
+--- Dev Accuracy thus far: 92.820
+--- Dev Category 0 P=0.925669835782,R=0.988971849194,F=0.956274394755
+--- Dev Category 1 P=0.942336874052,R=0.694136774718,F=0.799414862493
+Iter [14] Train: Time: 95.585s, Training Accuracy: 92.716
+--- Dev Accuracy thus far: 92.969
+--- Dev Category 0 P=0.927581084427,R=0.988600680793,F=0.957119317383
+--- Dev Category 1 P=0.94125645907,R=0.702955214786,F=0.804836928086
+Iter [15] Train: Time: 98.308s, Training Accuracy: 92.736
+--- Dev Accuracy thus far: 92.986
+--- Dev Category 0 P=0.928079135264,R=0.988174115038,F=0.957184315831
+--- Dev Category 1 P=0.939524838013,R=0.705810769699,F=0.806068677978
+Iter [16] Train: Time: 98.526s, Training Accuracy: 92.813
+--- Dev Accuracy thus far: 92.960
+--- Dev Category 0 P=0.929655241033,R=0.98593927243,F=0.956970387535
+--- Dev Category 1 P=0.929329090427,R=0.712513977839,F=0.806605673514
+Iter [17] Train: Time: 95.017s, Training Accuracy: 92.818
+--- Dev Accuracy thus far: 93.078
+--- Dev Category 0 P=0.930910811686,R=0.985992402659,F=0.957660231363
+--- Dev Category 1 P=0.930067167128,R=0.717974786499,F=0.810373515405
+Iter [18] Train: Time: 95.156s, Training Accuracy: 92.844
+--- Dev Accuracy thus far: 93.097
+--- Dev Category 0 P=0.93140848231,R=0.985620432179,F=0.95774792329
+--- Dev Category 1 P=0.928636899306,R=0.720512039012,F=0.811441647597
+Iter [19] Train: Time: 99.979s, Training Accuracy: 92.915
+--- Dev Accuracy thus far: 93.128
+--- Dev Category 0 P=0.931720094799,R=0.985643407579,F=0.95792349026
+--- Dev Category 1 P=0.928972450712,R=0.722188388145,F=0.812632059848
+Iter [20] Train: Time: 104.436s, Training Accuracy: 92.942
+--- Dev Accuracy thus far: 93.170
+--- Dev Category 0 P=0.933760737272,R=0.983747559496,F=0.958102604294
+--- Dev Category 1 P=0.921157045949,R=0.731253810201,F=0.815293118097
+Iter [21] Train: Time: 98.474s, Training Accuracy: 92.988
+--- Dev Accuracy thus far: 93.080
+--- Dev Category 0 P=0.931371571072,R=0.985435356201,F=0.957641025641
+--- Dev Category 1 P=0.927786499215,R=0.720438845998,F=0.811070448307
+Iter [22] Train: Time: 99.795s, Training Accuracy: 92.987
+--- Dev Accuracy thus far: 93.193
+--- Dev Category 0 P=0.935562539283,R=0.981872872635,F=0.958158457141
+--- Dev Category 1 P=0.913790939892,R=0.739664804469,F=0.817559223083
+Iter [23] Train: Time: 105.781s, Training Accuracy: 93.002
+--- Dev Accuracy thus far: 93.073
+--- Dev Category 0 P=0.936441854011,R=0.979209540394,F=0.957348294319
+--- Dev Category 1 P=0.902847984219,R=0.744056086161,F=0.815796802763
+Iter [24] Train: Time: 100.835s, Training Accuracy: 92.993
+--- Dev Accuracy thus far: 93.166
+--- Dev Category 0 P=0.933918055382,R=0.983480234338,F=0.958058586871
+--- Dev Category 1 P=0.920142875367,R=0.732284263959,F=0.815535078297
+Iter [25] Train: Time: 110.376s, Training Accuracy: 93.068
+--- Dev Accuracy thus far: 93.082
+--- Dev Category 0 P=0.933301607975,R=0.983114793024,F=0.957560806383
+--- Dev Category 1 P=0.918137631108,R=0.729397418961,F=0.812956566057
+Iter [26] Train: Time: 100.620s, Training Accuracy: 93.054
+--- Dev Accuracy thus far: 93.170
+--- Dev Category 0 P=0.935997180049,R=0.98102601995,F=0.957982760176
+--- Dev Category 1 P=0.910427307836,R=0.74192893401,F=0.81758684343
+Iter [27] Train: Time: 95.142s, Training Accuracy: 93.063
+--- Dev Accuracy thus far: 93.191
+--- Dev Category 0 P=0.934911391134,R=0.982639896578,F=0.958181654468
+--- Dev Category 1 P=0.916772071844,R=0.736510517224,F=0.816814109427
+Iter [28] Train: Time: 95.587s, Training Accuracy: 93.115
+--- Dev Accuracy thus far: 93.214
+--- Dev Category 0 P=0.937294978552,R=0.980079155673,F=0.958209725268
+--- Dev Category 1 P=0.906950948977,R=0.74756196668,F=0.819579017708
+Iter [29] Train: Time: 95.316s, Training Accuracy: 93.139
+--- Dev Accuracy thus far: 93.097
+--- Dev Category 0 P=0.936946036716,R=0.978919874416,F=0.957473162675
+--- Dev Category 1 P=0.901878914405,R=0.746265623412,F=0.816725978648
+Iter [30] Train: Time: 95.092s, Training Accuracy: 93.127
+--- Dev Accuracy thus far: 93.233
+--- Dev Category 0 P=0.93562005277,R=0.9823492164,F=0.958415382833
+--- Dev Category 1 P=0.915838470248,R=0.739687055477,F=0.818391321455
+Iter [31] Train: Time: 95.019s, Training Accuracy: 93.152
+--- Dev Accuracy thus far: 93.214
+--- Dev Category 0 P=0.939937043054,R=0.976939313984,F=0.958081043316
+--- Dev Category 1 P=0.89535440613,R=0.759650548557,F=0.821938887668
+Iter [32] Train: Time: 99.418s, Training Accuracy: 93.246
+--- Dev Accuracy thus far: 93.228
+--- Dev Category 0 P=0.938735728209,R=0.978545416161,F=0.958227275664
+--- Dev Category 1 P=0.901370860124,R=0.754314720812,F=0.821312109656
+Iter [33] Train: Time: 100.223s, Training Accuracy: 93.225
+--- Dev Accuracy thus far: 93.285
+--- Dev Category 0 P=0.938563446515,R=0.979524525713,F=0.958606620875
+--- Dev Category 1 P=0.905261872787,R=0.753174200102,F=0.822244400089
+Iter [34] Train: Time: 97.866s, Training Accuracy: 93.197
+--- Dev Accuracy thus far: 93.228
+--- Dev Category 0 P=0.938220424671,R=0.979184804116,F=0.958265022914
+--- Dev Category 1 P=0.903592375367,R=0.751600772436,F=0.820618099096
+Iter [35] Train: Time: 94.892s, Training Accuracy: 93.245
+--- Dev Accuracy thus far: 93.266
+--- Dev Category 0 P=0.938330890158,R=0.979551990713,F=0.958498457408
+--- Dev Category 1 P=0.905233553436,R=0.752108097125,F=0.821597025692
+Iter [36] Train: Time: 95.512s, Training Accuracy: 93.242
+--- Dev Accuracy thus far: 93.342
+--- Dev Category 0 P=0.939102726215,R=0.979659675505,F=0.958952574018
+--- Dev Category 1 P=0.905998536942,R=0.755259680862,F=0.823790255529
+Iter [37] Train: Time: 95.194s, Training Accuracy: 93.295
+--- Dev Accuracy thus far: 93.264
+--- Dev Category 0 P=0.937153372996,R=0.98092247612,F=0.958538534925
+--- Dev Category 1 P=0.910475482912,R=0.746800731261,F=0.820555741547
+Iter [38] Train: Time: 102.786s, Training Accuracy: 93.285
+--- Dev Accuracy thus far: 93.193
+--- Dev Category 0 P=0.937981948272,R=0.978969311555,F=0.958037443512
+--- Dev Category 1 P=0.902698083262,R=0.750888595511,F=0.819824814281
+Iter [39] Train: Time: 98.532s, Training Accuracy: 93.307
+--- Dev Accuracy thus far: 93.199
+--- Dev Category 0 P=0.939012339423,R=0.977836411609,F=0.958031201934
+--- Dev Category 1 P=0.898513954331,R=0.75548557497,F=0.820815628277
+Iter [40] Train: Time: 102.542s, Training Accuracy: 93.349
+--- Dev Accuracy thus far: 93.264
+--- Dev Category 0 P=0.937690851735,R=0.980291797483,F=0.958518212775
+--- Dev Category 1 P=0.90799359527,R=0.749110862717,F=0.820935412027
+Iter [41] Train: Time: 107.454s, Training Accuracy: 93.381
+--- Dev Accuracy thus far: 93.373
+--- Dev Category 0 P=0.936866463767,R=0.982744518614,F=0.959257256175
+--- Dev Category 1 P=0.918116940028,R=0.744996444174,F=0.822546270331
+Iter [42] Train: Time: 102.026s, Training Accuracy: 93.341
+--- Dev Accuracy thus far: 93.354
+--- Dev Category 0 P=0.937090927399,R=0.982215889601,F=0.959122940366
+--- Dev Category 1 P=0.915960099751,R=0.746165566277,F=0.822390148335
+Iter [43] Train: Time: 100.636s, Training Accuracy: 93.370
+--- Dev Accuracy thus far: 93.180
+--- Dev Category 0 P=0.939029952866,R=0.977576109323,F=0.957915417227
+--- Dev Category 1 P=0.897367785559,R=0.755438097174,F=0.820309050773
+Iter [44] Train: Time: 103.992s, Training Accuracy: 93.378
+--- Dev Accuracy thus far: 93.293
+--- Dev Category 0 P=0.937021362354,R=0.981476595071,F=0.958733922726
+--- Dev Category 1 P=0.912773359841,R=0.746089782653,F=0.821057337655
+Iter [45] Train: Time: 102.743s, Training Accuracy: 93.379
+--- Dev Accuracy thus far: 93.262
+--- Dev Category 0 P=0.935406097745,R=0.982977488058,F=0.958601963737
+--- Dev Category 1 P=0.918622255867,R=0.738962752461,F=0.819056189887
+Iter [46] Train: Time: 98.216s, Training Accuracy: 93.439
+--- Dev Accuracy thus far: 93.358
+--- Dev Category 0 P=0.939908291744,R=0.978918205805,F=0.959016711256
+--- Dev Category 1 P=0.903397412647,R=0.759041040228,F=0.824951697488
+Iter [47] Train: Time: 95.638s, Training Accuracy: 93.419
+--- Dev Accuracy thus far: 93.287
+--- Dev Category 0 P=0.938186778488,R=0.979998944535,F=0.958637155578
+--- Dev Category 1 P=0.907073679049,R=0.751472679261,F=0.821974115425
+Iter [48] Train: Time: 95.587s, Training Accuracy: 93.408
+--- Dev Accuracy thus far: 93.339
+--- Dev Category 0 P=0.935111155668,R=0.984406743885,F=0.95912596401
+--- Dev Category 1 P=0.924665391969,R=0.736970435843,F=0.820217096336
+Iter [49] Train: Time: 99.939s, Training Accuracy: 93.432
+--- Dev Accuracy thus far: 93.358
+--- Dev Category 0 P=0.938465811534,R=0.980633756365,F=0.959086510548
+--- Dev Category 1 P=0.909828009828,R=0.752412882251,F=0.823666796419

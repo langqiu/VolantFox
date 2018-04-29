@@ -1,0 +1,20 @@
+create external table if not exists similar_click_model_offline_train_sample_daily
+(
+        label_features  string
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+Location 's3://musically-bigdata/recommend_script/data/similar_click_model_offline/similar_click_model_offline_train_sample_daily/'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+);
+
+insert overwrite table similar_click_model_offline_train_sample_daily partition(dt=${hiveconf:day})
+select
+        concat(cast(label as string), ' ', features)
+from
+similar_click_model_offline_hash_feature_label_daily
+where dt=${hiveconf:day}
+;

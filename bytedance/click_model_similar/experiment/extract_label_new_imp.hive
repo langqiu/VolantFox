@@ -1,0 +1,182 @@
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+
+create external table if not exists similar_click_model_extract_label_new_imp
+(
+  s_mus_id      bigint
+  , r_mus_id    bigint
+  , scm         string
+  , label       bigint
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+Location 's3://musically-bigdata/recommend_script/data/similar_click_model/similar_click_model_extract_label_new_imp'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+);
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapred.reduce.tasks=500;
+add file /mnt/wei.hu/click_model_similar/extract_label/parseRecList.py;
+
+insert overwrite table similar_click_model_extract_label_new_imp partition(dt=${hiveconf:day})
+select
+  s_mus_id
+  , r_mus_id
+  , scm
+  , sum(click)/count(*) as label
+from
+(
+select
+  if(A.s_mus_id is not null, A.s_mus_id, B.s_mus_id) as s_mus_id
+  , if(A.r_mus_id is not null, A.r_mus_id, B.r_mus_id) as r_mus_id
+  , if(A.user_id is not null, A.user_id, B.user_id) as user_id
+  , if(A.s_mus_id is not null, A.scm, '') as scm
+  , if(B.s_mus_id is not null, B.click, A.click) as click
+from
+(
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , scm
+  , max(click) as click
+from
+(
+select
+  c.s_mus_id
+  , c.r_mus_id
+  , c.user_id
+  , c.scm
+  , 0 as click
+from
+(
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , scm
+from
+(
+select
+  transform(s_mus_id, r_mus_list, scm_list, user_id) using 'python parseRecList.py' as (s_mus_id, r_mus_id, scm, user_id)
+from
+(
+select
+  data['musical_id'] as s_mus_id
+  , data['item_list'] as r_mus_list
+  , data['scms'] as scm_list
+  , params['userid'] as user_id
+from
+musically_client_log
+--where dt=${hiveconf:day}
+where dt>=${hiveconf:startday}
+and dt<=${hiveconf:day}
+and action='SIMILAR_VIDEO_SHOW_UP'
+and event='SYS_RESPONSE'
+) a
+) b
+where s_mus_id>0
+and r_mus_id>0
+and user_id>0
+group by s_mus_id, r_mus_id, user_id, scm
+) c
+join
+(
+select
+  user_id
+from
+(
+select
+  COALESCE(data['front_musical_id'], data['trigger_id']) as s_mus_id
+  , data['musical_id'] as r_mus_id
+  , params['userid'] as user_id
+  , data['scm'] as scm
+from
+musically_client_log
+--where dt=${hiveconf:day}
+where dt>=${hiveconf:startday}
+and dt<=${hiveconf:day}
+and action='CLICK_SIMILAR_VIDEO'
+and event='USER_CLICK'
+) d
+group by user_id
+) f
+on (c.user_id = f.user_id)
+union all
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , scm
+  , 1 as click
+from
+(
+select
+  COALESCE(data['front_musical_id'], data['trigger_id']) as s_mus_id
+  , data['musical_id'] as r_mus_id
+  , params['userid'] as user_id
+  , data['scm'] as scm
+from
+musically_client_log
+--where dt=${hiveconf:day}
+where dt>=${hiveconf:startday}
+and dt<=${hiveconf:day}
+and action='CLICK_SIMILAR_VIDEO'
+and event='USER_CLICK'
+) a
+where scm in ('1.6.1.1', '1.6.2.1', '1.6.3.1', '1.6.9.1', '1.6.9.2')
+group by s_mus_id, r_mus_id, user_id, scm
+) A1
+where s_mus_id>0
+and r_mus_id>0
+and user_id>0
+group by s_mus_id, r_mus_id, user_id, scm
+) A
+full outer join
+(
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , 1 as click
+from
+(
+select
+  COALESCE(data['front_musical_id'], data['trigger_id']) as s_mus_id
+  , data['musical_id'] as r_mus_id
+  , params['userid'] as user_id
+  , data['scm'] as scm
+from
+musically_client_log
+--where dt=${hiveconf:day}
+where dt>=${hiveconf:startday}
+and dt<=${hiveconf:day}
+and action='CLICK_SIMILAR_VIDEO'
+and event='USER_CLICK'
+) a
+where scm not in ('1.6.1.1', '1.6.2.1', '1.6.3.1', '1.6.9.1', '1.6.9.2')
+and s_mus_id>0
+and r_mus_id>0
+and user_id>0
+group by s_mus_id, r_mus_id, user_id
+) B
+on (A.s_mus_id=B.s_mus_id and A.r_mus_id=B.r_mus_id and A.user_id=B.user_id)
+) C
+where scm in ('1.6.1.1', '1.6.2.1', '1.6.3.1', '1.6.9.1', '1.6.9.2') or scm=''
+group by s_mus_id, r_mus_id, scm
+;

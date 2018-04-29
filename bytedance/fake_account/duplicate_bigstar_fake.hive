@@ -1,0 +1,90 @@
+create EXTERNAL table if not exists duplicate_bigstar_fake
+(
+        musical_id             bigint
+        , user_id            bigint
+        , musical_id_sim    bigint
+        , user_id_sim        bigint
+        , phamming            bigint
+        , dhamming            bigint
+)
+partitioned by (dt string comment 'date')
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/duplicate_video/duplicate_bigstar_fake/'
+TBLPROPERTIES (
+        'auto.purge' = 'false'
+);
+
+add file s3n://musically-bigdata/recommend_script/udf/log/hamming.py;
+
+set mapred.reduce.tasks=1000;
+
+--insert overwrite table duplicate_bigstar_fake partition(dt=${yesterday})
+insert overwrite table duplicate_bigstar_fake partition(dt=20170727)
+select
+        musical_id
+        , user_id
+        , musical_id_sim
+        , user_id_sim
+        , phash_hamming
+        , dhash_hamming
+from
+(
+--汉明距离
+select
+        transform(musical_id, musical_id_sim, user_id, user_id_sim, phash_id, phash_id_sim, dhash_id, dhash_id_sim)
+        using 'python hamming.py'
+        as (musical_id, musical_id_sim, user_id, user_id_sim, phash_hamming, dhash_hamming)
+from
+(
+--笛卡尔积
+select
+        A.musical_id
+        , A.user_id
+        , A.phash_id
+        , A.dhash_id
+        , B.musical_id as musical_id_sim
+        , B.user_id as user_id_sim
+        , B.phash_id as phash_id_sim
+        , B.dhash_id as dhash_id_sim
+from
+(
+select
+    *
+from
+--duplicate_candidate_videos_hash_split
+duplicate_bigstar_fake_prepare
+--where dt=${yesterday}
+--where dt=20170726
+where fan_cnt>=1000000
+and phash_id is not null
+and dhash_id is not null
+and dhash_hamming_0>16
+) A
+join
+(
+select
+    *
+from
+--duplicate_candidate_videos_hash_split
+duplicate_bigstar_fake_prepare
+--where dt=${yesterday}
+--where dt=20170726
+where fan_cnt>=100000
+and fan_cnt<1000000
+and phash_id is not null
+and dhash_id is not null
+and dhash_hamming_0>16
+) B
+on (A.phash_split = B.phash_split and A.hash_index = B.hash_index)
+--or (A.dhash_split = B.dhash_split and A.hash_index = B.hash_index)
+--笛卡尔积
+) C
+where musical_id != musical_id_sim
+group by musical_id, musical_id_sim, user_id, user_id_sim, phash_id, phash_id_sim, dhash_id, dhash_id_sim
+--汉明距离
+) D
+where phash_hamming<=10
+and dhash_hamming<=10
+;

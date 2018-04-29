@@ -1,0 +1,48 @@
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+
+create external table if not exists similar_click_model_spend_time_label
+(
+	trigger_id	bigint
+	, musical_id	bigint
+	, user_id		bigint
+	, scm		string
+	, duration	double
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+Location 's3://musically-bigdata/recommend_script/data/similar_click_model/similar_click_model_spend_time_label/'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+)
+;
+
+insert overwrite table similar_click_model_spend_time_label partition(dt=${hiveconf:day})
+select
+	trigger_id
+	, musical_id
+	, user_id
+	, scm
+	, max(duration) as duration
+from
+(
+select
+	data['trigger_id'] as trigger_id
+	, data['musical_id'] as musical_id
+	, params['userid'] as user_id
+	, data['scm'] as scm
+	, (cast(data['duration'] as bigint)*cast(data['loop_complete'] as bigint)+cast(data['last_play_duration'] as bigint))/1000 as duration
+from
+musically_client_log
+where dt >= ${hiveconf:startday}
+and dt <= ${hiveconf:day}
+and data['trigger_id'] > 0
+and data['musical_id'] > 0
+and params['userid'] > 0
+and data['reference'] = '1'
+) a
+group by trigger_id, musical_id, user_id, scm
+;

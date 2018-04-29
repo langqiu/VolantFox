@@ -1,0 +1,89 @@
+set mapreduce.map.memory.mb=3072;
+set mapreduce.reduce.memory.mb=3072;
+set mapred.max.split.size=64000000;
+set mapred.reduce.tasks=799;
+
+add jar s3n://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+create temporary function make_consumer_action_list as 'net.vickymedia.recommend.udf.user.i2i.MakeConsumerActionList';
+
+create EXTERNAL table if not exists item_action_from_user_consumer
+(
+    musical_id			bigint
+    , promote_time		bigint
+    , index_time		bigint
+    , user_list			string comment "format: user_id,time,durationscore"
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/consumer_i2i_upgrade/item_action_from_user_consumer/';
+
+insert overwrite table item_action_from_user_consumer partition(dt=${hiveconf:today})
+select
+    musical_id
+    , max(promote_time) as promote_time
+    , max(index_time) as index_time
+    , make_consumer_action_list(user_id, action_type, action_cnt, time, duration, durationScore) as user_list
+from
+(
+select
+    cast(split_part(item_info, ',', 1) as bigint) as musical_id
+    , cast(split_part(item_info, ',', 2) as bigint) as author_id
+    , cast(split_part(item_info, ',', 3) as bigint) as action_type
+    , cast(split_part(item_info, ',', 4) as bigint) as action_cnt
+    , cast(split_part(item_info, ',', 5) as bigint) as promote_time
+    , cast(split_part(item_info, ',', 6) as bigint) as time
+    , cast(split_part(item_info, ',', 7) as bigint) as index_time
+    , cast(split_part(item_info, ',', 9) as double) as duration
+    , cast(split_part(item_info, ',', 10) as double) as durationScore
+    , cast(user_id as bigint) as user_id
+from
+(
+select
+    trans_array(1, '\\;', utdid, item_list) as (user_id, item_info)
+from
+action_fromu2i_for_i2i_upgrade
+where dt=${hiveconf:today}
+) a
+) A
+left join
+(
+select
+    from_id
+    , to_id
+    , max(follow_rel) as follow_rel
+from
+(
+select
+    from_id
+    , to_id
+    , mutual as follow_rel
+from
+user_follow
+union all
+select
+    from_mus_id as from_id
+    , to_mus_id as to_id
+    , 2 as follow_rel
+from
+fb_musically_rel
+where dt=${hiveconf:today}
+union all
+select
+    fid as from_id
+    , tid as to_id
+    , 3 as follow_rel
+from
+contact_direct_rel
+where dt=${hiveconf:today}
+) b
+group by from_id, to_id
+) B
+on A.user_id=B.from_id and A.author_id=B.to_id
+where A.author_id!=A.user_id
+and (follow_rel is null or follow_rel<=0)
+group by musical_id
+;

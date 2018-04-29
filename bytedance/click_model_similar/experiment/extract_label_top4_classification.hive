@@ -1,0 +1,143 @@
+create EXTERNAL table if not exists similar_expose_log_rank
+(
+  main_id                 bigint
+  , item_list             string
+  , expose_time           bigint
+  , user_id               bigint
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ':'
+STORED AS TEXTFILE
+location 's3://musically-bigdata/cloud-service-log/musical_composite_service/similar/'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+);
+
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+
+create EXTERNAL TABLE IF NOT EXISTS musically_client_log (
+  data map<string,string>,
+  params map<string,string>,
+  param map<string,string>,
+  ip string,
+  country string
+)
+PARTITIONED BY (dt string, event string, action string)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES (
+  "ignore.malformed.json" = "true"
+)
+STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat'
+OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION 's3://musically-datacenter/client-log/'
+TBLPROPERTIES (
+  'hive.input.dir.recursive' = 'TRUE', 
+  'hive.mapred.supports.subdirectories' = 'TRUE',
+  'hive.supports.subdirectories' = 'TRUE', 
+  'mapred.input.dir.recursive' = 'TRUE',
+  'mapreduce.input.fileinputformat.input.dir.recursive' = 'TRUE'
+);
+
+----------------------------------------------------------------------------
+
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+
+create external table if not exists similar_click_model_extract_label_sru
+(
+  s_mus_id      bigint
+  , r_mus_id    bigint
+  , user_id     bigint
+  , scm         string
+  , click       bigint
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+Location 's3://musically-bigdata/recommend_script/data/similar_click_model_offline/similar_click_model_extract_label_sru'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+);
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+create temporary function trans_array_index as 'net.vickymedia.recommend.udf.util.TransArrayIndex';
+
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapred.reduce.tasks=500;
+
+insert overwrite table similar_click_model_extract_label_sru partition(dt=${hiveconf:day})
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , '' as scm
+  , max(click) as click
+from
+(
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , 0 as click
+from
+(
+select
+  s_mus_id
+  , split_part(item_info, ',', 1) as r_mus_id
+  , user_id
+  , split_part(item_info, ',', 2) as scm
+  , rank
+from
+(
+select
+  trans_array_index(2, '\\;', main_id, user_id, item_list) as (s_mus_id, user_id, item_info, rank)
+from
+similar_expose_log_rank
+where dt>=${hiveconf:start_day}
+and dt<=${hiveconf:day}
+) a
+where a.rank<=4
+) b
+group by s_mus_id, r_mus_id, user_id
+union all
+select
+  s_mus_id
+  , r_mus_id
+  , user_id
+  , 1 as click
+from
+(
+select
+  COALESCE(data['front_musical_id'], data['trigger_id']) as s_mus_id
+  , data['musical_id'] as r_mus_id
+  , params['userid'] as user_id
+  , data['scm'] as scm
+from
+musically_client_log
+where dt>=${hiveconf:start_day}
+and dt<=${hiveconf:day}
+and action='CLICK_SIMILAR_VIDEO'
+and event='USER_CLICK'
+) a
+group by s_mus_id, r_mus_id, user_id
+) temp
+where s_mus_id>0
+and r_mus_id>0
+and user_id>0
+group by s_mus_id, r_mus_id, user_id
+;

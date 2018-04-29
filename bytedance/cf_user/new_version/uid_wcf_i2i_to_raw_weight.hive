@@ -1,0 +1,53 @@
+SET hive.execution.engine=mr;
+set mapred.max.split.size=64000000;
+set mapred.reduce.tasks=1799;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+set mapreduce.reduce.shuffle.memory.limit.percent=0.1;
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapreduce.map.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx5120m -XX:-UseGCOverheadLimit;
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function uid_wcf_mapper as 'net.vickymedia.recommend.udf.user.i2i.UidWCFI2iOptMapperExp';
+create temporary function uid_wcf_reducer as 'net.vickymedia.recommend.udf.user.i2i.UidWCFI2iReducerExp';
+
+create EXTERNAL table if not exists uid_wcf_i2i_to_raw_weight
+(
+item_id bigint comment "user id",
+item_list string comment "top similiar items: item_id1,score1\\;item_id2,score2"
+)
+comment "w_cos cf item to item similarity"
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/uid_wcf_i2i_to_raw_weight/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table uid_wcf_i2i_to_raw_weight partition(dt=${hiveconf:today})
+select
+   B.item_id,
+   uid_wcf_reducer(user_id, B.item_neighbors, B.score) as rec_items
+from
+(
+select
+   uid_wcf_mapper(user_id, item_list) as (item_id, user_id, item_neighbors, score)
+from
+(
+select
+   user_id
+   , item_list
+from
+   uid_u2i_to_norm_weight
+where
+   dt=${hiveconf:today}
+   and REGEXP_COUNT(item_list,"\\;") > 5
+distribute by rand()
+)b
+)B
+group by
+   B.item_id
+;

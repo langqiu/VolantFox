@@ -1,0 +1,50 @@
+add jar s3n://musically-bigdata/spark-jars/aws-jsonserde.jar;
+add jar s3n://musically-bigdata/spark-jars/hive-contrib-1.2.1.jar;
+add jar s3n://musically-bigdata/spark-jars/json-serde-1.3-jar-with-dependencies.jar;
+
+select
+  os
+  , version
+  , count(*)
+from
+(
+select
+  data['musical_id'] as s_mus_id
+  , data['item_list'] as r_mus_id_list
+  , data['scms'] as scm_list
+  , params['userid'] as user_id
+  , params['app_version'] as version
+  , params['os_type'] as os
+from
+musically_client_log
+where dt=20171121
+and action='SIMILAR_VIDEO_SHOW_UP'
+and event='SYS_RESPONSE'
+) a
+group by os, version
+order by os, version desc
+;
+
+select
+  os
+  , version
+  , count(*)
+from
+(
+select
+  COALESCE(data['front_musical_id'], data['trigger_id']) as s_mus_id
+  , data['musical_id'] as r_mus_id
+  , params['userid'] as user_id
+  , data['scm'] as scm
+  , params['app_version'] as version
+  , params['os_type'] as os
+from
+musically_client_log
+where dt=20171121
+and action='CLICK_SIMILAR_VIDEO'
+and event='USER_CLICK'
+) a
+group by os, version
+order by os, version desc
+;
+

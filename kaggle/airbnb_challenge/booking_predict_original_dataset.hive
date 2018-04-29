@@ -1,0 +1,56 @@
+create EXTERNAL table if not exists booking_predict_original_dataset
+(
+    dim_is_requested string
+    , ds_night string
+    , ds string
+    , id_listing_anon string
+    , id_user_anon string
+    , m_effective_daily_price float
+    , m_pricing_cleaning_fee float
+    , dim_market string
+    , dim_lat float
+    , dim_lng float
+    , dim_room_type string
+    , dim_person_capacity int
+    , dim_is_instant_bookable string
+    , m_checkouts int
+    , m_reviews int
+    , days_since_last_booking int
+    , cancel_policy int
+    , image_quality_score float
+    , m_total_overall_rating int
+    , m_professional_pictures int
+    , dim_has_wireless_internet int
+    , ds_night_day_of_week int
+    , ds_night_day_of_year int
+    , ds_checkin_gap int
+    , ds_checkout_gap int
+    , occ_occupancy_plus_minus_7_ds_night float
+    , occ_occupancy_plus_minus_14_ds_night float
+    , occ_occupancy_trailing_90_ds float
+    , m_minimum_nights int
+    , m_maximum_nights int
+    , price_booked_most_recent float
+    , p2_p3_click_through_score float
+    , p3_inquiry_score float
+    , listing_m_listing_views_2_6_ds_night_decay float
+    , general_market_m_unique_searchers_0_6_ds_night float
+    , general_market_m_contacts_0_6_ds_night float
+    , general_market_m_reservation_requests_0_6_ds_night float
+    , general_market_m_is_booked_0_6_ds_night float
+    , m_available_listings_ds_night int
+    , kdt_score float
+    , r_kdt_listing_views_0_6_avg_n100 float
+    , r_kdt_n_active_n100 int
+    , r_kdt_n_available_n100 int
+    , r_kdt_m_effective_daily_price_n100_p50 float
+    , r_kdt_m_effective_daily_price_available_n100_p50 float
+    , r_kdt_m_effective_daily_price_booked_n100_p50 float
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3://musically-bigdata/recommend_script/data/wei_hu_copy/booking_predict/booking_predict_original_dataset/dataset_from_airbnb/'
+;
+
+

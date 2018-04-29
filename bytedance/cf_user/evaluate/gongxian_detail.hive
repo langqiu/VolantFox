@@ -1,0 +1,21 @@
+select 
+a.from_id
+, a.follow_rel
+, a.score
+, a.info
+, b.follow_rel
+, b.score
+, b.info
+from 
+(
+select * from
+user_cf_action_score
+where dt=${hiveconf:day} and to_id=${hiveconf:user1}
+) a
+join
+(
+select * from
+user_cf_action_score
+where dt=${hiveconf:day} and to_id=${hiveconf:user2}
+) b
+on (a.from_id=b.from_id);

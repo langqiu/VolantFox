@@ -1,0 +1,133 @@
+--SET hive.execution.engine=mr;
+set mapreduce.map.memory.mb=3072;
+set mapreduce.reduce.memory.mb=3072;
+set mapreduce.map.java.opts=-Xmx3072m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx3072m -XX:-UseGCOverheadLimit;
+
+create EXTERNAL table if not exists user_cf_action_score
+(
+    from_id                bigint
+    , to_id                bigint
+    , follow_rel        bigint
+    , score                float
+    , info                string
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/user_cf_action_score/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table user_cf_action_score partition(dt=${hiveconf:day})
+select
+    from_id
+    , to_id
+    , follow_rel
+    , score
+    , concat_ws(',', like_each, profile_each, loop_each, like_score, profile_score, loop_score)
+from
+(
+select
+    from_id
+    , to_id
+    , follow_rel
+    , cast(like_each as string) as like_each
+    , cast(profile_each as string) as profile_each
+    , cast(loop_each as string) as loop_each
+    , cast(like_score as string) as like_score
+    , cast(profile_score as string) as profile_score
+    , cast(loop_score as string) as loop_score
+    , score
+    , Row_Number() over(partition by from_id, to_id order by score desc) as rank
+from
+(
+select
+    from_id
+    , to_id
+    , follow_rel
+    , like_each
+    , profile_each
+    , loop_each
+    , 0 as like_score
+    , 0 as profile_score
+    , 0 as loop_score
+    , if(action_each<3.1 or action_all<30.1, 0.05, 0.1) as score
+    --, cast((action_score*pow(1.1,nums)*mutual) as double) as score
+from
+(
+select
+    A.from_id
+    , A.to_id
+    , A.follow_rel
+    , A.like_each
+    , A.profile_each
+    , A.loop_each
+    , if(A.like_each>0,1,0)+if(A.profile_each>0,1,0)+if(A.loop_each>0,1,0)-1 as nums
+    , if(A.follow_rel=1, 0.5, 1) as mutual
+    --, if(B.action_all<=5, 0.1, (A.action_each+0.1*B.action_all)/(1.1*B.action_all)) as action_score
+    , A.action_each as action_each
+    , B.action_all as action_all
+from
+(
+select
+    a.*
+from
+(
+select
+    from_id
+    , to_id
+    , max(follow_rel) as follow_rel
+    , sum(like_cnt) as like_each
+    , sum(view_profile_cnt-search_cnt) as profile_each
+    , sum(loop_cnt/10) as loop_each
+    , if(sum(like_cnt)+sum(view_profile_cnt-search_cnt)+sum(loop_cnt/10)<=1, 0, log2(sum(like_cnt)+sum(view_profile_cnt-search_cnt)+sum(loop_cnt/10))) as action_each
+from
+user_cf_action
+where dt=20170630
+and follow_rel>=0
+and (like_cnt>0 or comment_cnt>0 or view_profile_cnt-search_cnt>=3 or loop_cnt>=5)
+--and (like_cnt>0 or comment_cnt>0 or view_profile_cnt-search_cnt>0 or loop_cnt>0)
+--and ((like_cnt>0 and loop_cnt>0) or (comment_cnt>0 and loop_cnt>0) or (view_profile_cnt-search_cnt>0 and loop_cnt>0))
+group by from_id, to_id
+) a
+join
+(
+select
+    from_id
+    , to_id
+from
+user_follow_dev
+where from_unixtime(create_time, 'yyyyMMdd')>=20170101
+) b
+on (a.from_id=b.from_id and a.to_id=b.to_id)
+) A
+join
+(
+select
+    from_id
+    , sum(action_each) as action_all
+from
+(
+select
+    from_id
+    , to_id
+    , if(sum(like_cnt)+sum(view_profile_cnt-search_cnt)+sum(loop_cnt/10)<=1, 0, log2(sum(like_cnt)+sum(view_profile_cnt-search_cnt)+sum(loop_cnt/10))) as action_each
+from
+user_cf_action
+where dt=20170630
+and follow_rel>=0
+and (like_cnt>0 or comment_cnt>0 or view_profile_cnt-search_cnt>=3 or loop_cnt>=5)
+--and (like_cnt>0 or comment_cnt>0 or view_profile_cnt-search_cnt>0 or loop_cnt>0)
+--and ((like_cnt>0 and loop_cnt>0) or (comment_cnt>0 and loop_cnt>0) or (view_profile_cnt-search_cnt>0 and loop_cnt>0))
+group by from_id, to_id
+) a
+group by from_id
+) B
+on (A.from_id = B.from_id)
+) C
+) D
+) E where rank<=250
+;

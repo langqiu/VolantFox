@@ -1,0 +1,33 @@
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+create temporary function trans_array_index as 'net.vickymedia.recommend.udf.util.TransArrayIndex';
+
+create external table if not exists similar_click_model_offline_slot_distribution
+(
+	model_rowinfo	string
+)
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+Location 's3://musically-bigdata/recommend_script/data/similar_click_model_offline/similar_click_model_offline_fm_model/'
+TBLPROPERTIES(
+  'auto.purge' = 'false'
+);
+
+alter table similar_click_model_offline_slot_distribution add if not exists partition(dt=${hiveconf:day});
+select
+	slot
+	, count(*)
+from
+(
+select
+	split_part(split_part(model_rowinfo, ' ', 1), ':', 2) as slot
+from
+similar_click_model_offline_slot_distribution
+where dt=${hiveconf:day}
+) a
+group by slot
+;

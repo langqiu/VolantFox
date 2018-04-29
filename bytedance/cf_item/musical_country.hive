@@ -1,0 +1,58 @@
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+set mapreduce.map.memory.mb=5120;
+set mapreduce.reduce.memory.mb=5120;
+set mapred.reduce.tasks=1999;
+
+select
+    s_country
+    , sum(if(s_country==r_country,1,0))
+    , count(*)
+    , sum(if(s_country==r_country,1,0))/count(*) as rate
+from
+(
+select
+    A.musical_id as musical_id
+    , B.country as s_country
+    , A.rec_id as rec_id
+    , C.country as r_country
+from
+(
+select
+    item_id as musical_id
+    , split_part(item_info, ',', 1) as rec_id
+from
+(
+select
+    trans_array(1, "\\;", item_id, item_list) as (item_id, item_info)
+from
+musical_cf_i2i_rawx_upgrade_country
+where dt=${hiveconf:day}
+) a
+) A
+join
+(
+select
+    musical_id
+    , country
+from
+musical
+where dt=${hiveconf:day}
+) B
+on (A.musical_id = B.musical_id)
+join
+(
+select
+    musical_id
+    , country
+from
+musical
+where dt=${hiveconf:day}
+) C
+on (A.rec_id = C.musical_id)
+) X
+group by s_country
+order by rate desc
+;

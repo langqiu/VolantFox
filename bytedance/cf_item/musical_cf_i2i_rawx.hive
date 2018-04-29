@@ -1,0 +1,44 @@
+set mapred.max.split.size=128000000;
+set mapred.reduce.tasks=1799;
+set mapreduce.map.memory.mb=4096;
+set mapreduce.reduce.memory.mb=4096;
+set mapreduce.map.java.opts=-Xmx4096m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4096m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function musical_wcf_mapper_exp as 'net.vickymedia.recommend.udf.i2i.MusWCFI2iMapperExp';
+create temporary function musical_wcf_reducer_exp as 'net.vickymedia.recommend.udf.i2i.MusWCFI2iReducerExp';
+
+create EXTERNAL table if not exists musical_cf_i2i_rawx_upgrade
+(
+item_id bigint comment "musical_id",
+item_list string comment "top similiar items: item_id1,score1\\;item_id2,score2"
+)
+comment "w_cos cf item to item similarity"
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/musical_i2i_upgrade/musical_cf_i2i_rawx_upgrade/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table musical_cf_i2i_rawx_upgrade partition(dt=${hiveconf:day})
+select
+   B.item_id,
+   musical_wcf_reducer_exp(utdid, B.item_neighbors, B.item_score) as rec_items
+from
+(
+select
+   musical_wcf_mapper_exp(utdid, item_list) as (item_id, utdid, item_neighbors, item_score)
+from
+   musical_u2i_with_norm_upgrade
+where
+   dt = ${hiveconf:day} and REGEXP_COUNT(item_list,"\\;") > 5
+)B
+group by
+   B.item_id
+;

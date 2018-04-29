@@ -1,0 +1,53 @@
+create EXTERNAL table if not exists user_cf_action_score_normalization
+(
+    from_id                bigint
+    , follow_list        string
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/user_cf_action_score_normalization/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table user_cf_action_score_normalization partition(dt=${hiveconf:day})
+select
+    from_id
+    , concat_ws('\\;', collect_set(concat(to_id, ',', cast(norm_score as string), ',', follow_rel, ',', info))) as follow_list
+from
+(
+select
+    A.from_id
+    , A.to_id
+    , A.follow_rel
+    , A.info
+    , cast(round(A.score*1.0*B.nums/B.sum_score, 4) as float) as norm_score
+from
+(
+select
+    from_id
+    , to_id
+    , follow_rel
+    , score
+    , info
+from
+user_cf_action_score
+where dt=${hiveconf:day}
+) A
+join
+(
+select
+    from_id
+    , sum(score) as sum_score
+    , count(*) as nums
+from
+user_cf_action_score
+where dt=${hiveconf:day}
+group by from_id
+) B
+on (A.from_id = B.from_id)
+) C
+group by from_id
+;

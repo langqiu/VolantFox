@@ -1,0 +1,84 @@
+select
+    key
+    , count(*) as all_nums
+    , sum(if(dim_is_requested='true',1,0)) as nums
+    , sum(if(dim_is_requested='true',1,0))/count(*) as ratio
+from
+(
+select
+    --cast(log(2, m_effective_daily_price+3) as bigint) as key
+    --cast(log(2, m_pricing_cleaning_fee+3) as bigint) as key
+
+    --dim_market as key
+    --cast(dim_lat*10 as bigint) as key
+    --cast(dim_lng*10 as bigint) as key
+    --concat(cast(cast(dim_lat*5 as bigint) as string), ':', cast(cast(dim_lng*5 as bigint) as string)) as key
+    --id_user_anon as key
+    --ds as key
+    --ds_night as key
+
+    --dim_room_type as key
+    --dim_person_capacity as key
+    --dim_is_instant_bookable as key
+    cast(log(2, m_checkouts+3) as bigint) as key
+    --cast(log(2, m_reviews+3) as bigint) as key
+    --cast(log(2, days_since_last_booking+3) as bigint) as key
+    --cancel_policy as key
+    --cast(image_quality_score*10 as bigint) as key
+    --cast(log(2, m_total_overall_rating+3) as bigint) as key
+    --cast(log(2, m_professional_pictures+3) as bigint) as key
+    --dim_has_wireless_internet as key
+    --ds_night_day_of_week as key
+    --ds_night_day_of_year as key
+    --ds_checkin_gap as key
+    --ds_checkout_gap as key
+    --cast(occ_occupancy_plus_minus_7_ds_night*10 as bigint) as key
+    --cast(occ_occupancy_plus_minus_14_ds_night*10 as bigint) as key
+    --cast(occ_occupancy_trailing_90_ds*10 as bigint) as key
+    --m_minimum_nights as key
+    --cast(log(2, m_maximum_nights+3) as bigint) as key
+    --cast(log(2, price_booked_most_recent+3) as bigint) as key
+    --cast(p2_p3_click_through_score*20 as bigint) as key
+    --cast(p3_inquiry_score*20 as bigint) as key
+    --cast(log(2, 100*listing_m_listing_views_2_6_ds_night_decay+3) as bigint) as key
+
+    --cast(log(2, general_market_m_unique_searchers_0_6_ds_night+3) as bigint) as key
+    --cast(general_market_m_unique_searchers_0_6_ds_night/100 as bigint) as key
+
+    --cast(log(2, general_market_m_contacts_0_6_ds_night+3) as bigint) as key
+    --cast(general_market_m_contacts_0_6_ds_night/100 as bigint) as key
+
+    
+    --cast(log(2, general_market_m_reservation_requests_0_6_ds_night+3) as bigint) as key
+    --cast(general_market_m_reservation_requests_0_6_ds_night/10 as bigint) as key
+
+    --cast(general_market_m_is_booked_0_6_ds_night as bigint) as key
+
+    --cast(m_available_listings_ds_night/1000 as bigint) as key
+    --cast(log(2, m_available_listings_ds_night+3) as bigint) as key
+
+    --cast(kdt_score*5 as bigint) as key    
+
+    --cast(log(2, r_kdt_listing_views_0_6_avg_n100+3) as bigint) as key
+    --cast(r_kdt_listing_views_0_6_avg_n100 as bigint) as key
+
+    --cast(r_kdt_n_active_n100/10 as bigint) as key
+    --cast(log(2, r_kdt_n_active_n100+3) as bigint) as key
+
+    --cast(r_kdt_n_available_n100/10 as bigint) as key
+    --cast(log(2, r_kdt_n_available_n100+3) as bigint) as key
+
+    --cast(log(2, r_kdt_m_effective_daily_price_n100_p50+3) as bigint) as key
+
+    --cast(log(2, r_kdt_m_effective_daily_price_available_n100_p50+3) as bigint) as key
+
+    --cast(log(2, r_kdt_m_effective_daily_price_booked_n100_p50+3) as bigint) as key
+
+    , dim_is_requested
+from booking_predict_original_dataset
+) a
+group by key
+order by key
+--order by nums desc
+--limit 100
+;

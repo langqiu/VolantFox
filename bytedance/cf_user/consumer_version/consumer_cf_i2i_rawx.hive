@@ -1,0 +1,44 @@
+set mapred.max.split.size=128000000;
+set mapred.reduce.tasks=1799;
+set mapreduce.map.memory.mb=4096;
+set mapreduce.reduce.memory.mb=4096;
+set mapreduce.map.java.opts=-Xmx4096m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4096m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function consumer_wcf_mapper as 'net.vickymedia.recommend.udf.user.i2i.ConsumerCFMapper';
+create temporary function consumer_wcf_reducer as 'net.vickymedia.recommend.udf.user.i2i.ConsumerCFReducer';
+
+create EXTERNAL table if not exists consumer_cf_i2i_rawx
+(
+item_id bigint comment "user_id",
+item_list string comment "top similiar items: item_id1,score1\\;item_id2,score2"
+)
+comment "w_cos cf item to item similarity"
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/data/consumer_i2i_upgrade/consumer_cf_i2i_rawx/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table consumer_cf_i2i_rawx partition(dt=${hiveconf:today})
+select
+   B.item_id,
+   consumer_wcf_reducer(musical_id, B.item_neighbors, B.item_score) as rec_items
+from
+(
+select
+   consumer_wcf_mapper(musical_id, item_list, 150) as (item_id, musical_id, item_neighbors, item_score)
+from
+   consumer_u2i_with_norm
+where
+   dt = ${hiveconf:today} and REGEXP_COUNT(item_list,"\\;") > 5
+)B
+group by
+   B.item_id
+;

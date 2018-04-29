@@ -1,0 +1,70 @@
+--SET hive.execution.engine=mr;
+set mapred.max.split.size=64000000;
+set mapred.reduce.tasks=599;
+set mapreduce.map.memory.mb=4086;
+set mapreduce.reduce.memory.mb=4086;
+set mapreduce.map.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+set hive.auto.convert.join = true;
+set hive.exec.mode.local.auto=true;
+set hive.exec.mode.local.auto.inputbytes.max=2147483648;
+set hive.exec.mode.local.auto.input.files.max=10;
+
+--drop table uid_u2i_to_norm_weight;
+
+create EXTERNAL table if not exists uid_u2i_to_norm_weight
+(
+user_id bigint,
+item_list string comment "item1,n1,info1\\;item2..."
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/uid_u2i_to_norm_weight/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table uid_u2i_to_norm_weight partition(dt=${hiveconf:day})
+select /*+ mapjoin(C) */
+   B.user_id,
+   concat_ws('\\;', collect_set(concat(B.item_id, ',', C.user_to_norm, ',',C.user_to_len,',',B.item_info)))  as item_list
+from
+(
+select
+   user_id,
+   cast(split_part(item_info, ',', 1) as bigint) item_id,
+   split_part(item_info, ',', 2, 100) as item_info
+from
+(
+select
+   trans_array(1,"\\;",from_id, follow_list) as (user_id, item_info)
+from
+   user_cf_action_score_normalization
+where
+   dt=${hiveconf:day}
+   and REGEXP_COUNT(follow_list,"\\;") > 5
+)A
+)B
+join
+(
+select
+   user_id,
+   user_to_norm,
+   user_to_len
+from
+   uid_i2u_to_norm_weight
+where dt=${hiveconf:day}
+)C
+on
+   B.item_id = C.user_id
+group by
+   B.user_id
+;

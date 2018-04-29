@@ -1,0 +1,55 @@
+--SET hive.execution.engine=mr;
+set mapred.reduce.tasks=59;
+set mapreduce.map.memory.mb=4086;
+set mapreduce.reduce.memory.mb=4086;
+set mapreduce.map.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4086m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+add jar s3n://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function i2u_divider as 'net.vickymedia.recommend.udf.primary.I2uDivider';
+create temporary function i2u_aggregater as 'net.vickymedia.recommend.udf.primary.I2uAggregater';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+
+
+
+create EXTERNAL table if not exists uid_i2u_to_norm_weight
+(
+   user_id bigint comment 'musical id',
+   user_to_norm double,
+   user_to_len bigint comment "num of users follow this user"
+)
+partitioned by(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE
+location 's3n://musically-bigdata/recommend_script/report/uid_i2u_to_norm_weight/'
+TBLPROPERTIES (
+    'auto.purge' = 'false'
+);
+
+insert overwrite table uid_i2u_to_norm_weight partition(dt=${hiveconf:today})
+select
+   item_id as user_id,
+   split_part(norm_info, '\\|', 1) as user_to_norm,
+   split_part(norm_info, '\\|', 2) as user_to_len
+from
+(
+select
+   A.item_id,
+   i2u_aggregater(A.w) as norm_info
+from
+(
+select
+   i2u_divider(follow_list) as (item_id, w)
+from
+   user_cf_i2i_action_score
+where
+   dt=${hiveconf:today}
+   and REGEXP_COUNT(follow_list,"\\;") > 5
+   and from_id > 0
+)A
+group by
+   A.item_id
+)B
+;

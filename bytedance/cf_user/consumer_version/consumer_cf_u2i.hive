@@ -1,0 +1,69 @@
+--SET hive.execution.engine=mr;
+--set mapreduce.reduce.shuffle.parallelcopies=8;
+--set mapreduce.reduce.shuffle.memory.limit.percent=0.15;
+set mapreduce.map.memory.mb=4096;
+set mapreduce.reduce.memory.mb=4096;
+set mapreduce.map.java.opts=-Xmx4096m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx4096m -XX:-UseGCOverheadLimit;
+set mapreduce.job.reduce.slowstart.completedmaps=0.95;
+set mapred.reduce.tasks=1009;
+
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+set hive.auto.convert.join = true;
+set hive.exec.mode.local.auto=true;
+set hive.exec.mode.local.auto.inputbytes.max=2147483648;
+set hive.exec.mode.local.auto.input.files.max=10;
+
+create EXTERNAL table if not exists consumer_u2i_with_norm
+(
+musical_id string,
+item_list string comment "item1,n1,info1\\;item2..."
+)comment "utdid --> item1,n1,info1\\;item2,n2..."
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+STORED AS PARQUET
+location 's3n://musically-bigdata/recommend_script/data/consumer_i2i_upgrade/consumer_u2i_with_norm/'
+TBLPROPERTIES (
+    'parquet.compression'='GZIP',
+    'auto.purge' = 'false'
+);
+
+insert overwrite table consumer_u2i_with_norm partition(dt=${hiveconf:today})
+select /*+ mapjoin(C) */
+   B.musical_id,
+   concat_ws('\\;', collect_set(concat(B.item_id, ',', C.item_norm, ',',C.item_len,',',B.item_info,',',0)))  as item_list
+from
+(
+select
+   musical_id,
+   cast(split_part(item_info, ',', 1) as bigint) item_id,
+   split_part(item_info, ',', 2, 100) as item_info
+from
+(
+select
+   trans_array(1,"\\;",musical_id, split_part(user_list,"\\;",1,200)) as (musical_id, item_info)
+from
+   item_action_from_user_consumer
+where
+   dt=${hiveconf:today} and REGEXP_COUNT(user_list,"\\;") > 5
+)A
+)B
+join
+(
+select
+   item_id,
+   item_norm,
+   item_len
+from
+   consumer_i2i_with_norm
+where dt = ${hiveconf:today} and item_len>2
+)C
+on B.item_id = C.item_id
+group by
+   B.musical_id
+;
+

@@ -1,0 +1,39 @@
+add jar s3://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+create temporary function trans_array as 'net.vickymedia.recommend.udf.util.TransArray';
+
+select
+	count(*) as all_number
+	, sum(nums)*1.0/count(*) as count_per
+	, sum(if(nums>=10000, 1, 0))*1.0/count(*) as count_w
+	, sum(if(nums>=1000 and nums<10000, 1, 0))*1.0/count(*) as count_k
+	, sum(if(nums>=500 and nums<1000, 1, 0))*1.0/count(*) as count_5h
+	, sum(if(nums>=200 and nums<500, 1, 0))*1.0/count(*) as count_2h
+	, sum(if(nums>=150 and nums<200, 1, 0))*1.0/count(*) as count_1h_5
+	, sum(if(nums>=100 and nums<150, 1, 0))*1.0/count(*) as count_1h
+	, sum(if(nums>=50 and nums<100, 1, 0))*1.0/count(*) as count_5
+	, sum(if(nums>=10 and nums<50, 1, 0))*1.0/count(*) as count_1
+	, sum(if(nums<10, 1, 0))*1.0/count(*) as count_0
+from
+(
+select
+	item
+	, count(*) as nums
+from
+(
+select
+	A.item_id
+	, split_part(A.item, ',', 1) as item
+from
+(
+select
+	trans_array(1, '\\;', item_id, item_list) as (item_id, item)
+from
+${hiveconf:table}
+where dt=${hiveconf:day}
+) A
+) B
+group by item
+) C
+;

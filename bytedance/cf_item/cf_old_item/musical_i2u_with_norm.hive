@@ -1,0 +1,54 @@
+--SET hive.execution.engine=mr;
+set mapreduce.job.reduce.slowstart.completedmaps=1.0;
+set mapred.max.split.size=64000000;
+set mapred.reduce.tasks=799;
+set mapreduce.map.memory.mb=2048;
+set mapreduce.reduce.memory.mb=2048;
+set mapreduce.map.java.opts=-Xmx2048m -XX:-UseGCOverheadLimit;
+set mapreduce.reduce.java.opts=-Xmx2048m -XX:-UseGCOverheadLimit;
+
+add jar s3n://musically-bigdata/recommend_script/udf/log/recommend-offline-0.1.jar;
+create temporary function regexp_count as 'net.vickymedia.recommend.udf.util.RegexpCount';
+create temporary function i2u_divider as 'net.vickymedia.recommend.udf.primary.I2uDivider';
+create temporary function i2u_aggregater as 'net.vickymedia.recommend.udf.primary.I2uAggregater';
+create temporary function split_part as 'net.vickymedia.recommend.udf.util.SplitPart';
+
+create EXTERNAL table if not exists musical_i2u_with_norm_test
+(
+   item_id bigint comment 'musical id',
+   item_norm double,
+   item_len bigint comment "num of users have action on this item"
+)comment "item --> uid_list, with item_info"
+partitioned by (dt string)
+ROW FORMAT DELIMITED
+STORED AS PARQUET
+location 's3n://musically-bigdata/recommend_script/data/i2i_old_test/musical_i2u_with_norm_test/'
+TBLPROPERTIES (
+    'parquet.compression'='GZIP',
+    'auto.purge' = 'false'
+);
+
+
+insert overwrite table musical_i2u_with_norm_test partition (dt=${hiveconf:day})
+select
+   item_id,
+   split_part(norm_info, '\\|', 1) as item_norm,
+   split_part(norm_info, '\\|', 2) as item_len
+from
+(
+select
+   A.item_id,
+   i2u_aggregater(A.w) as norm_info
+from
+(
+select
+   i2u_divider(split_part(item_list,"\\;",1,200)) as (item_id, w)
+from
+   uid2i_action_table_for_i2i_test
+where
+   dt=${hiveconf:day} and REGEXP_COUNT(item_list,"\\;") > 5
+)A
+group by
+   A.item_id
+)B
+;

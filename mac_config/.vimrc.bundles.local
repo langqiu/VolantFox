@@ -1,0 +1,42 @@
+" TagList
+  "Bundle 'vim-scripts/taglist.vim'
+
+" Rainbow-Parenthesis
+  "Bundle 'kien/rainbow_parentheses.vim'
+
+" DelimitMate
+  "Bundle 'Raimondi/delimitMate'
+
+" TaskList
+  Bundle 'vim-scripts/TaskList.vim'
+
+" VimWiki
+  "Bundle 'vim-scripts/vimwiki'
+
+" IndentLine
+  Bundle 'Yggdroot/indentLine'
+
+" 颜色主题
+  "Bundle 'tomasr/molokai'
+  "Bundle 'vim-scripts/phd'
+
+  "Bundle 'Lokaltog/vim-powerline'
+
+" c++高亮
+  Bundle 'octol/vim-cpp-enhanced-highlight'
+
+" 头文件和cpp文件切换
+  "Bundle 'derekwyatt/vim-fswitch'
+
+" 书签功能
+  "Bundle 'kshenoy/vim-signature'
+  "Bundle 'vim-scripts/BOOKMARKS--Mark-and-Highlight-Full-Lines'
+
+  "Bundle 'vim-scripts/indexer.tar.gz'
+  "Bundle 'vim-scripts/DfrankUtil'
+  "Bundle 'vim-scripts/vimprj'
+  "Bundle 'dyng/ctrlsf.vim'
+  "Bundle 'fholgado/minibufexpl.vim'
+  "Bundle 'sjl/gundo.vim'
+  "Bundle 'suan/vim-instant-markdown'
+  "Bundle 'lilydjwg/fcitx.vim'

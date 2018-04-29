@@ -1,0 +1,59 @@
+select
+A.user_id
+, A.mus_cnt
+, A.copy_mus_cnt
+, A.copy_rate
+, B.musical_id
+, B.user_id
+, B.musical_id_sim
+from
+(
+select
+*
+from
+${hiveconf:result_table}
+where dt=${hiveconf:day}
+) A
+join
+(
+select
+a.*
+from
+(
+select
+*
+from
+${hiveconf:mid_table}
+where dt=${hiveconf:day}
+) a
+join
+(
+select
+    musical_id_sim
+    , count(*)
+from
+${hiveconf:mid_table}
+where dt=${hiveconf:day}
+group by musical_id_sim
+having count(*)=1
+) b
+on (a.musical_id_sim = b.musical_id_sim)
+join
+(
+select
+    musical_id
+    , count(*)
+from
+${hiveconf:mid_table}
+where dt=${hiveconf:day}
+group by musical_id
+having count(*)<=30
+) c
+on (a.musical_id = c.musical_id)
+) B
+on (A.user_id = B.user_id_sim)
+where A.copy_mus_cnt>=20
+or (A.copy_mus_cnt>=5 and A.copy_rate>0.1)
+or A.copy_rate>0.3
+order by A.copy_mus_cnt desc, A.user_id
+;
